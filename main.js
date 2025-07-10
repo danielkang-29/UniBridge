@@ -183,7 +183,7 @@ function renderHome() {
       <button data-tab="chat" id="navChatBtn"></button>
       <button data-tab="profile" id="navProfileBtn"></button>
     </nav>
-    <div id="homeContent" style="min-height:250px; font-size:16px; padding: 0 10px;">
+    <div id="homeContent" style="flex: 1; padding: 16px 10px; box-sizing: border-box;">
     </div>
   `;
 
@@ -550,9 +550,31 @@ function renderHome() {
 
     const chatList = document.getElementById("chatList");
 
-    // 🔁 채팅 로그 기반으로 상대 email 수집
     const logsSnap = await getDocs(collection(db, "chatLogs"));
     const emails = new Set();
+
+    // 🔁 채팅 로그 기준 상대 email
+    logsSnap.forEach(docSnap => {
+      const chatId = docSnap.id;
+      const [email1, email2] = chatId.split("-");
+      if (email1 === state.currentUserEmail) emails.add(email2);
+      else if (email2 === state.currentUserEmail) emails.add(email1);
+    });
+
+    // ✅ 서로 수락한 matches 기준 이메일 추가
+    const matchSnap = await getDocs(collection(db, "matches"));
+    matchSnap.forEach(doc => {
+      const id = doc.id;
+      if (!id.includes(state.currentUserEmail)) return;
+
+      const [e1, e2] = id.split("-");
+      const other = e1 === state.currentUserEmail ? e2 : e1;
+      const data = doc.data();
+
+      if (data[e1] === true && data[e2] === true) {
+        emails.add(other); // 중복되지 않게 Set 사용
+      }
+    });
 
     logsSnap.forEach(docSnap => {
       const chatId = docSnap.id;
@@ -878,12 +900,12 @@ function renderHome() {
       container.innerHTML = `
         <h2>${data.nickname || t("profile.anon")}</h2>
         <div class="my-info">
-          <p><strong>${t("profile.age")}</strong>${u.age ?? '-'}</p>
-          <p><strong>${t("profile.school")}</strong>${t(u.school ?? '-')}</p>
-          <p><strong>${t("profile.major")}</strong>${u.major ?? '-'}</p>
-          <p><strong>${t("profile.mbti")}</strong>${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
-          <p><strong>${t("profile.personality")}</strong>${(u.personality || []).map(p => t(p)).join(', ')}</p>
-          <p><strong>${t("profile.purpose")}</strong>${(u.purpose || []).map(p => t(p)).join(', ')}</p>
+          <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
+          <p><strong>${t("profile.school")}</strong> ${t(u.school ?? '-')}</p>
+          <p><strong>${t("profile.major")}</strong> ${u.major ?? '-'}</p>
+          <p><strong>${t("profile.mbti")}</strong> ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
+          <p><strong>${t("profile.personality")}</strong> ${(u.personality || []).map(p => t(p)).join(', ')}</p>
+          <p><strong>${t("profile.purpose")}</strong> ${(u.purpose || []).map(p => t(p)).join(', ')}</p>
         </div>
 
         <h3>${t("profile.bioTitle")}</h3>
