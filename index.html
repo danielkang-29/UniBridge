@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>UniBridge 로그인 & 계정 생성</title>
+  <style>
+    :root {
+      --primary-color: #10b981; /* 에메랄드 그린 */
+      --primary-color-dark: #0f9f77;
+      --hover-bg: #d1fae5;
+      --nav-text: #000000;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin: 5vh auto;
+      width: 100%;
+      max-width: 393px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      min-height: 80vh;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    input, select, button {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    #languageSelect {
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 500;
+    }
+
+    button:hover {
+      background-color: var(--primary-color-dark);
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 14px;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      padding: 0;
+    }
+
+    nav {
+      display: flex;
+      background-color: white;
+      border-bottom: 1px solid #ccc;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav button {
+      flex: 1;
+      padding: 15px 0;
+      border: none;
+      background: white;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--nav-text);
+      transition: background-color 0.3s;
+    }
+
+    nav button.active {
+      background-color: var(--hover-bg);
+      border-bottom: 3px solid var(--primary-color);
+      font-weight: 700;
+    }
+
+    nav button:hover:not(.active) {
+      background-color: #f3f4f6;
+    }
+
+    .calendar-wrapper {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .calendar-header button {
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border: 1.5px solid #6ee7b7;
+      color: #10b981;
+      font-size: 10px;
+      line-height: 1;
+      border-radius: 6px; /* 살짝 둥근 정사각형 */
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .calendar-header button:hover {
+      background-color: #ecfdf5;
+    }
+
+    .calendar-header span {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .calendar {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+
+    .calendar th,
+    .calendar td {
+      width: 14.28%;
+      height: 36px;
+      padding: 6px;
+      border: 1px solid #e0e0e0;
+      font-size: 14px;
+    }
+
+    .calendar th {
+      background-color: #f9f9f9;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .calendar td {
+      background-color: white;
+    }
+
+    .calendar td:hover {
+      background-color: var(--hover-bg);
+      cursor: pointer;
+    }
+
+    .chat-room {
+      flex: 1;
+      overflow-y: auto;
+      background: #f4f4f4;
+      padding: 10px;
+      max-height: 50vh;
+    }
+
+    .chat-bubble {
+      max-width: 70%;
+      margin: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      position: relative;
+      font-size: 15px;
+    }
+
+    .chat-bubble.sent {
+      background-color: #d1fae5;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .chat-bubble.received {
+      background-color: white;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background: white;
+    }
+
+    .chat-input-wrapper input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      margin: 0 8px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+    }
+
+    .chat-input-wrapper button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .chat-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .chat-info {
+      flex-grow: 1;
+    }
+
+    .chat-meta {
+      text-align: right;
+      font-size: 12px;
+    }
+
+    .chat-unread {
+      background-color: red;
+      color: white;
+      border-radius: 10px;
+      padding: 2px 6px;
+      font-size: 11px;
+      margin-left: 5px;
+    }
+
+    #matchBtn,
+    .match-navigation button,
+    .decision-buttons button {
+      font-size: 16px;
+      min-height: 48px;
+      border-radius: 6px;
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    #matchBtn:hover,
+    .match-navigation button:hover,
+    .decision-buttons button:hover {
+      background-color: var(--primary-color-dark);
+    }
+
+    /* 매칭 질문 버튼 레이아웃 및 스타일 */
+    .match-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .match-options button {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 45%;
+      background-color: white;
+      border: 2px solid #6ee7b7; /* 연한 에메랄드 */
+      color: #10b981;
+      font-weight: 500;
+      border-radius: 8px;
+      padding: 12px 10px;
+      font-size: 15px;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .match-options button:hover {
+      background-color: #ecfdf5;
+    }
+
+    .decision-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 400px) {
+      input, select, button {
+        font-size: 15px;
+      }
+
+      .calendar-header span {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Firebase, Auth, Main -->
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./auth.js"></script>
+  <script type="module">
+    import { renderLogin } from './auth.js';
+    import './main.js';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderLogin();
+    });
+
+    const navExchangeBtn = document.getElementById("navExchangeBtn");
+    if (navExchangeBtn) {
+      navExchangeBtn.addEventListener("click", () => {
+        setActiveTab("exchange");
+        renderExchangeTab();
+      });
+    }
+  </script>
+</body>
+</html>
