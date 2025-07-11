@@ -16,6 +16,7 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      width: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: #f4f4f4;
     }
@@ -32,7 +33,7 @@
       margin: 5vh auto;
       width: 100%;
       max-width: 393px;
-      background: white;
+      background: #f5f5f5;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -66,12 +67,24 @@
       border-radius: 6px;
       border: none;
       background-color: var(--primary-color);
-      color: white;
+      color: #fcfcfc;
       font-weight: 500;
     }
 
     button:hover {
       background-color: var(--primary-color-dark);
+    }
+
+    #backToHomeBtn {
+      background-color: #f5f5f5 !important;
+      color: #3fcfa4; /* 에메랄드 텍스트 */
+      border: 2px solid #6ee7b7;
+      font-weight: 500;
+      font-size: 16px;
+      border-radius: 8px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
 
     .link-btn {
@@ -98,33 +111,49 @@
 
     nav {
       display: flex;
-      background-color: white;
-      border-bottom: 1px solid #ccc;
       position: sticky;
       top: 0;
+      width: 100;
       z-index: 100;
+      max-width: none !important; /* 혹시 상속된 max-width 무시 */
+      width: 100%;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #ccc;
+      align-items: center;       /* ✅ 텍스트 수직 가운데 정렬 */
+      height: 40px;              /* ✅ 전체 높이 제한 (선택사항) */
     }
 
     nav button {
       flex: 1;
-      padding: 15px 0;
+      padding: 0px 0;
       border: none;
-      background: white;
+      background: #f5f5f5;
       cursor: pointer;
       font-size: 16px;
       font-weight: 500;
-      color: var(--nav-text);
-      transition: background-color 0.3s;
+      height: 100%;   
+      color: #999; /* 연한 회색 기본값 */
+      transition: color 0.3s;
     }
 
     nav button.active {
-      background-color: var(--hover-bg);
-      border-bottom: 3px solid var(--primary-color);
+      color: black; /* 연한 에메랄드 텍스트 */
       font-weight: 700;
+      border-bottom: none; /* 기존 강조선 제거 */
+      background-color: #f5f5f5; /* 배경색 유지 */
     }
 
     nav button:hover:not(.active) {
       background-color: #f3f4f6;
+    }
+
+    #tabIndicator {
+      position: absolute;
+      bottom: 0;
+      height: 3px;
+      width: 20%; /* 버튼 5개일 경우 */
+      background-color: #10b981;
+      transition: transform 0.3s ease;
     }
 
     .calendar-wrapper {
@@ -141,12 +170,13 @@
     }
 
     .calendar-header button {
-      width: 20px;
-      height: 20px;
-      background-color: white;
-      border: 1.5px solid #6ee7b7;
-      color: #10b981;
-      font-size: 10px;
+      width: 45px;
+      height: 45px;
+      background-color: #fcfcfc;
+      border: 2px solid #6ee7b7;
+      color: #6ee7b7;
+      font-size: 20px;
+      font-weight: bold;
       line-height: 1;
       border-radius: 6px; /* 살짝 둥근 정사각형 */
       padding: 0;
@@ -162,11 +192,12 @@
     }
 
     .calendar-header span {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 600;
       color: #333;
-      min-width: 60px;
+      min-width: 100px;
       text-align: center;
+      margin-bottom: 15px;
     }
 
     .calendar {
@@ -290,7 +321,7 @@
       min-height: 48px;
       border-radius: 6px;
       background-color: var(--primary-color);
-      color: white;
+      color: #fcfcfc;
     }
 
     #matchBtn:hover,
@@ -311,7 +342,7 @@
     .match-options button {
       flex: 1 1 calc(50% - 6px);
       min-width: 45%;
-      background-color: white;
+      background-color: #fcfcfc;
       border: 2px solid #6ee7b7; /* 연한 에메랄드 */
       color: #10b981;
       font-weight: 500;
@@ -341,13 +372,97 @@
       align-items: center;
     }
 
+    #topNav {
+      position: sticky;
+      top: 0;
+      background-color: #f5f5f5;
+      z-index: 100;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .tab-wrapper {
+      display: flex;
+      position: relative;
+    }
+
+    .tab-btn {
+      color: #999; /* 연한 회색 */
+      background: none;
+      border: none;
+      font-size: 16px;
+      padding: 12px 10px;
+      flex: 1;
+      font-weight: normal;
+      transition: color 0.3s;
+    }
+
+    .tab-btn.active {
+      color: #6ee7b7; /* 연한 에메랄드 녹색 */
+      font-weight: normal; /* 글씨 굵게 안 함 */
+    }
+
+    #fileLabel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: #a7f3d0;
+      color: #f5f5f5;
+      font-size: 36px;              /* ⬅️ 살짝 줄임 */
+      font-weight: bold;
+      line-height: 1;               /* ⬅️ 수직 정렬 보정 */
+      border: 0;
+      cursor: pointer;
+      transform: translateY(-10px);  /* ⬅️ 약간 위로 올림 */
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    #fileLabel:hover {
+      background-color: #10b981;
+    }
+
+    .plus-icon {
+      color: #f5f5f5;
+      font-size: 36px;
+      font-weight: bold;
+      line-height: 1;
+      transform: translateY(-4px); /* ✅ 글자만 위로 */
+      display: inline-block;
+    }
+
+    #chatInputRow {
+      display: flex;
+      align-items: center; /* ✅ 버튼과 입력창 수직 정렬 */
+      gap: 8px;
+    }
+
+
+    #chatInput {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 9999px;
+      background-color: #f0f0f0;
+      font-size: 16px;
+      line-height: 1;
+      height: 40px;                /* ✅ 높이 고정해서 정렬 맞춤 */
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+      outline: none;
+    }
+
+    #chatInput:focus {
+      box-shadow: 0 0 0 2px #10b98144;
+    }
+
     /* NEW 배지 */
     .new-badge {
       position: absolute;
       top: 6px;
       right: 20px; /* 필요 시 숫자 조정 */
       background: red;
-      color: white;
+      color: #fcfcfc;
       font-size: 10px;
       padding: 2px 5px;
       border-radius: 10px;
@@ -366,18 +481,18 @@
     }
   </style>
 </head>
-<body>
-  <div id="app"></div>
+  <body>
+    <div id="app"></div>
 
-  <!-- Firebase, Auth, Main -->
-  <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./auth.js"></script>
-  <script type="module">
-    import { renderLogin } from './auth.js';
-    import './main.js';
+    <!-- Firebase, Auth, Main -->
+    <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./auth.js"></script>
+    <script type="module">
+      import { renderLogin } from './auth.js';
+      import './main.js';
 
-    document.addEventListener("DOMContentLoaded", () => {
-    });
-  </script>
-</body>
+      document.addEventListener("DOMContentLoaded", () => {
+      });
+    </script>
+  </body>
 </html>
