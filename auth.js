@@ -1,7 +1,15 @@
-import { db }            from './firebase.js';
+import { db, auth }            from './firebase.js';
 import { collection, getDoc, getDocs, query, orderBy, doc, setDoc, onSnapshot, serverTimestamp, getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-// Firebase 관련 import 밑 or 기존 함수 교체
+import {
+  setPersistence,
+  browserLocalPersistence,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
 export async function findMatchCandidates() {
   const usersSnap = await getDocs(collection(db, "users"));
   const matched = [];
@@ -50,36 +58,26 @@ function setLanguage(langCode) {
 
   if (state.isLoggedIn) {
     renderHome();
+
+    // ✅ DOM 렌더링 이후 nav 텍스트 업데이트
     setTimeout(() => {
-      setActiveTab(state.activeTab || "home");
-      updateTopNavText(); // ✅ 언어 바뀐 후 nav 텍스트 갱신
-    }, 0);
+      updateTopNavText();
+      setActiveTab(state.currentTab || "home");
+    }, 50);
   } else {
     renderLogin();
   }
 
-  updateTexts(); // 버튼 등 UI 갱신
+  updateTexts();
 
-  // ✅ 현재 탭이 chat이고 채팅방이 열려있으면 다시 그리기
+  // ✅ 채팅방이면 재렌더링
   if (state.currentTab === "chat" && state.currentChatId && state.currentChatPartnerEmail) {
-    renderChatRoom(state.currentChatId, state.currentChatPartnerEmail);
+    setTimeout(() => {
+      renderChatRoom(state.currentChatId, state.currentChatPartnerEmail);
+    }, 100);
   }
 }
 
-function updateTopNavText() {
-  if (!document.getElementById("navHomeBtn")) return; // DOM이 없으면 리턴
-
-  document.getElementById("navHomeBtn").textContent = t("nav.home");
-  document.getElementById("navExchangeBtn").textContent = t("nav.exchange");
-  document.getElementById("navMatchingBtn").childNodes[0].textContent = t("nav.match");
-  document.getElementById("navChatBtn").textContent = t("nav.chat");
-  document.getElementById("navProfileBtn").textContent = t("nav.profile");
-
-  const newBadge = document.getElementById("newBadge");
-  if (newBadge) {
-    newBadge.style.display = (state.newAcceptances?.length ?? 0) > 0 ? "inline-block" : "none";
-  }
-}
 
 function rerenderAll() {
   const activeTab = document.querySelector('.tab-btn.active')?.id;
@@ -137,7 +135,7 @@ const i18n = {
     },
     nav: {
       home: "홈",
-      exchange: "교류 프로그램",
+      exchange: "프로그램",
       match: "매칭",
       chat: "채팅",
       profile: "나의정보",
@@ -260,6 +258,7 @@ const i18n = {
       email: "이메일을 입력해주세요",
       password: "비밀번호를 입력해주세요",
       login: "로그인",
+      logout: "로그아웃",
       signup: "처음이신가요? 계정 생성하기",
       programschedule: "일정 안내",
       calendar: "달력",
@@ -291,7 +290,7 @@ const i18n = {
       call: "📞 전화 걸기",
       endCall: "📴 통화 종료",
       inCall: "통화 중...",
-      inputPlaceholder: "메시지를 입력하세요",
+      inputPlaceholder: "메시지 입력",
       send: "보내기",
       back: "뒤로",
       chooseFile: "파일 선택",
@@ -333,7 +332,9 @@ const i18n = {
       loginError: "로그인 중 오류가 발생했습니다: {error}",
       noAccount: "등록된 계정이 없습니다. 계정을 생성해주세요.",
       wrongPassword: "비밀번호가 틀렸습니다.",
-      signupError: "계정 생성 중 오류가 발생했습니다: {error}"
+      signupError: "계정 생성 중 오류가 발생했습니다: {error}",
+      wrongCredential: "이메일 또는 비밀번호가 올바르지 않습니다.",
+      tooManyRequests: "잠시 후 다시 시도해주세요. 로그인 시도가 너무 많습니다."
     }
   },
 
@@ -345,7 +346,7 @@ const i18n = {
     },
     nav: {
       home: "Home",
-      exchange: "Exchange Program",
+      exchange: "Program",
       match: "Match",
       chat: "Chat",
       profile: "My Info",
@@ -468,6 +469,7 @@ const i18n = {
       email: "Please enter your email",
       password: "Please enter your password",
       login: "Log In",
+      logout: "Log Out",
       signup: "New here? Create an account",
       programschedule: "Schedule Information",
       calendar: "Calendar",
@@ -541,7 +543,9 @@ const i18n = {
       loginError: "There was an error logging in: {error}",
       noAccount: "No account found. Please sign up.",
       wrongPassword: "Incorrect password.",
-      signupError: "There was an error creating your account: {error}"
+      signupError: "There was an error creating your account: {error}",
+      wrongCredential: "Incorrect email or password.",
+      tooManyRequests: "Too many login attempts. Please try again later."
     }
   },
 
@@ -553,7 +557,7 @@ const i18n = {
     },
     nav: {
       home: "ホーム",
-      exchange: "交流プログラム",
+      exchange: "プログラム",
       match: "マッチング",
       chat: "チャット",
       profile: "マイページ",
@@ -676,6 +680,7 @@ const i18n = {
       email: "メールアドレスを入力してください",
       password: "パスワードを入力してください",
       login: "ログイン",
+      logout: "ログアウト",
       signup: "初めてですか？アカウントを作成する",
       programschedule: "日程案内",
       calendar: "カレンダー",
@@ -749,7 +754,9 @@ const i18n = {
       loginError: "ログイン中にエラーが発生しました: {error}",
       noAccount: "登録されたアカウントがありません。アカウントを作成してください。",
       wrongPassword: "パスワードが間違っています。",
-      signupError: "アカウント作成中にエラーが発生しました: {error}"
+      signupError: "アカウント作成中にエラーが発生しました: {error}",
+      wrongCredential: "メールアドレスまたはパスワードが正しくありません。",
+      tooManyRequests: "ログイン試行が多すぎます。しばらくしてからもう一度お試しください。"
     }
   },
 
@@ -761,7 +768,7 @@ const i18n = {
     },
     nav: {
       home: "首页",
-      exchange: "交流项目",
+      exchange: "项目",
       match: "配对",
       chat: "聊天",
       profile: "我的资料",
@@ -884,6 +891,7 @@ const i18n = {
       email: "请输入邮箱地址",
       password: "请输入密码",
       login: "登录",
+      logout: "登出",
       signup: "第一次使用？创建账号",
       programschedule: "日程指南",
       calendar: "日历",
@@ -957,7 +965,9 @@ const i18n = {
       loginError: "登录时出现错误: {error}",
       noAccount: "没有找到账号，请先注册～",
       wrongPassword: "密码错误",
-      signupError: "创建账号时发生错误: {error}"
+      signupError: "创建账号时发生错误: {error}",
+      wrongCredential: "邮箱或密码不正确。",
+      tooManyRequests: "登录尝试过多，请稍后再试。"
     }
   }
 };
@@ -1225,6 +1235,8 @@ async function saveAccount() {
       if (!confirm(t("alert.accountExists"))) return;
     }
 
+    await createUserWithEmailAndPassword(auth, email, password);
+
     await setDoc(userRef, {
       nickname: state.signupAnswers[0],
       age: state.signupAnswers[1],
@@ -1266,7 +1278,7 @@ async function loginUser() {
   const password = passwordInput.value.trim();
 
   if (!email) {
-    alert(t("alert.enterEmail"))
+    alert(t("alert.enterEmail"));
     return;
   }
   if (!password) {
@@ -1275,21 +1287,25 @@ async function loginUser() {
   }
 
   try {
+    // ✅ 새로고침/탭 종료 후에도 로그인 유지
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithEmailAndPassword(auth, email, password);
+
     const userRef = doc(db, "users", email);
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
-      alert(t("alert.noAccount"))
+      alert(t("alert.noAccount"));
       return;
     }
 
     const data = docSnap.data();
     if (data.password !== password) {
-      alert(t("alert.wrongPassword"))
+      alert(t("alert.wrongPassword"));
       return;
     }
 
-    alert(t("alert.loginSuccess", { name: data.nickname }))
+    alert(t("alert.loginSuccess", { name: data.nickname }));
 
     // 1) 로그인 정보 state에 저장
     state.currentUserEmail = email;
@@ -1316,7 +1332,7 @@ async function loginUser() {
     state.matchedUsers = matched;
 
     // 3) 홈 화면 렌더링
-    renderHome();  
+    renderHome();
     setTimeout(() => setActiveTab("home"), 0); // 홈 탭 활성화 보장
 
     // ✅ DOM 생성 후 탭 버튼 이벤트 연결
@@ -1332,8 +1348,16 @@ async function loginUser() {
     }, 100);
 
   } catch (error) {
-    alert(t("alert.loginError", { error: error.message }))
-  }
+      if (error.code === "auth/invalid-credential") {
+        alert(t("alert.wrongCredential"));
+      } else if (error.code === "auth/user-not-found") {
+        alert(t("alert.noAccount"));
+      } else if (error.code === "auth/too-many-requests") {
+        alert(t("alert.tooManyRequests"));
+      } else {
+        alert(t("alert.loginError", { error: error.message }));
+      }
+    }
 }
 
 export { renderLogin, renderSignupQuestion, renderSignupFinal, saveAccount, loginUser, t };
