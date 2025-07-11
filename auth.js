@@ -77,7 +77,7 @@ function updateTopNavText() {
 
   const newBadge = document.getElementById("newBadge");
   if (newBadge) {
-    newBadge.textContent = t("nav.new");
+    newBadge.style.display = (state.newAcceptances?.length ?? 0) > 0 ? "inline-block" : "none";
   }
 }
 
@@ -246,6 +246,7 @@ const i18n = {
       back: "뒤로",
       previous: "이전",
       backToHome: "홈으로 돌아가기",
+      backToProfile: "뒤로 가기",
       noBio: "자기소개가 아직 없습니다.",
       lookIntroduction: "자기소개 보기",
       noIntroduction: "자기소개가 아직 없습니다.",
@@ -260,6 +261,7 @@ const i18n = {
       password: "비밀번호를 입력해주세요",
       login: "로그인",
       signup: "처음이신가요? 계정 생성하기",
+      programschedule: "일정 안내",
       calendar: "달력",
       sun: "일",
       mon: "월",
@@ -315,7 +317,8 @@ const i18n = {
       editBioTitle: "자기소개 수정",
       save: "저장",
       cancel: "취소",
-      changeLang: "언어 변경"
+      changeLang: "언어 변경",
+      chooseLang: "언어 선택"
     },
     alert: {
       notLoggedIn: "로그인 상태가 아닙니다.",
@@ -451,6 +454,7 @@ const i18n = {
       back: "Back",
       previous: "Previous",
       backToHome: "Back to Home",
+      backToProfile: "Back",
       noBio: "No bio provided.",
       lookIntroduction: "View Bio",
       noIntroduction: "No bio provided.",
@@ -465,6 +469,7 @@ const i18n = {
       password: "Please enter your password",
       login: "Log In",
       signup: "New here? Create an account",
+      programschedule: "Schedule Information",
       calendar: "Calendar",
       sun: "Sun",
       mon: "Mon",
@@ -520,7 +525,8 @@ const i18n = {
       editBioTitle: "Edit Bio",
       save: "Save",
       cancel: "Cancel",
-      changeLang: "Change Language"
+      changeLang: "Change Language",
+      chooseLang: "Choose a Language"
     },
     alert: {
       notLoggedIn: "You're not logged in.",
@@ -656,6 +662,7 @@ const i18n = {
       back: "戻る",
       previous: "前へ",
       backToHome: "ホームに戻る",
+      backToProfile: "戻る",
       noBio: "自己紹介がありません。",
       lookIntroduction: "自己紹介を見る",
       noIntroduction: "自己紹介がありません。",
@@ -670,6 +677,7 @@ const i18n = {
       password: "パスワードを入力してください",
       login: "ログイン",
       signup: "初めてですか？アカウントを作成する",
+      programschedule: "日程案内",
       calendar: "カレンダー",
       sun: "日",
       mon: "月",
@@ -725,7 +733,8 @@ const i18n = {
       editBioTitle: "自己紹介を編集",
       save: "保存",
       cancel: "キャンセル",
-      changeLang: "言語を変更"
+      changeLang: "言語を変更",
+      chooseLang: "言語選択"
     },
     alert: {
       notLoggedIn: "ログインしていません。",
@@ -861,6 +870,7 @@ const i18n = {
       back: "返回",
       previous: "上一步",
       backToHome: "回到首页",
+      backToProfile: "返回",
       noBio: "暂无自我介绍",
       lookIntroduction: "查看自我介绍",
       noIntroduction: "暂无自我介绍",
@@ -875,6 +885,7 @@ const i18n = {
       password: "请输入密码",
       login: "登录",
       signup: "第一次使用？创建账号",
+      programschedule: "日程指南",
       calendar: "日历",
       sun: "日",
       mon: "一",
@@ -930,7 +941,8 @@ const i18n = {
       editBioTitle: "编辑自我介绍",
       save: "保存",
       cancel: "取消",
-      changeLang: "切换语言"
+      changeLang: "切换语言",
+      chooseLang: "选择语言"
     },
     alert: {
       notLoggedIn: "你尚未登录",
