@@ -1292,7 +1292,7 @@ function renderHome(defaultTab = "home") {
       // --- 언어 변경 버튼 ---
       const langToggleBtn = document.createElement("button");
       langToggleBtn.id = "langToggleBtn";
-      langToggleBtn.textContent = `🌐`;
+      langToggleBtn.textContent = `🌐 ${t("profile.changeLang")}`;
       langToggleBtn.onclick = () => renderLanguageSettingView();
 
       // --- 로그아웃 버튼 ---
