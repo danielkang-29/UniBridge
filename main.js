@@ -1006,7 +1006,7 @@ function renderHome(defaultTab = "home") {
 
     const chatBox = document.getElementById("chatBox");
     chatBox.style.cssText = `
-      height: 500px;
+      height: 400px;
       overflow-y: scroll;
       padding: 10px;
       border: none;
