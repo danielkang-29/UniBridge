@@ -172,13 +172,11 @@ function renderHome() {
     <nav id="homeMenu">
       <button data-tab="home" id="navHomeBtn" class="active"></button>
       <button data-tab="exchange" id="navExchangeBtn"></button>
-      <button data-tab="matching" id="navMatchingBtn">
-        <span class="label"></span>
-        <span id="newBadge" style="
-          display: ${state.newAcceptances.length ? 'inline-block' : 'none'};
-          background:red; color:white; font-size:12px;
-          padding:2px 4px; border-radius:4px; margin-left:4px;
-        ">${t("nav.new")}</span>
+      <button data-tab="matching" id="navMatchingBtn" class="nav-btn">
+        ${t("nav.match")}
+        <span id="matchNewBadge" class="new-badge" style="display: ${state.newAcceptances.length ? 'inline-block' : 'none'};">
+          ${t("nav.new")}
+        </span>
       </button>
       <button data-tab="chat" id="navChatBtn"></button>
       <button data-tab="profile" id="navProfileBtn"></button>
@@ -232,12 +230,13 @@ function renderHome() {
 
     const homeContent = document.getElementById("homeContent");
     homeContent.innerHTML = `
-      <h2>${t("common.calendar")}</h2>
+      <h2>${t("common.programschedule")}</h2>
       <div class="calendar-wrapper">
+        <div style="text-align:center; font-size:16px; font-weight:500; margin-bottom:4px;" id="yearLabel">${calendarYear}</div>
         <div class="calendar-header">
-          <button id="prevMonthBtn">&lt;</button> <!-- < -->
+          <button id="prevMonthBtn">&lt;</button>
           <span id="monthLabel">${monthNames[calendarMonth]}</span>
-          <button id="nextMonthBtn">&gt;</button> <!-- > -->
+          <button id="nextMonthBtn">&gt;</button>
         </div>
         <table class="calendar">
           <thead>
@@ -267,7 +266,10 @@ function renderHome() {
     }
 
     function updateCalendar() {
+      // 연도와 월 모두 업데이트
+      document.getElementById("yearLabel").textContent = calendarYear;
       monthLabel.textContent = `${monthNames[calendarMonth]}`;
+
       const days = generateCalendar(calendarYear, calendarMonth);
       let html = "";
       for (let i = 0; i < days.length; i++) {
@@ -363,9 +365,21 @@ function renderHome() {
     state.acceptIndex = 0;
 
     renderAcceptedCandidate();
+
+    // ✅ NEW 배지 업데이트는 DOM 렌더링 후에 해야 하므로 setTimeout으로
+    setTimeout(() => {
+      const matchNewBadge = document.getElementById("matchNewBadge");
+      if (matchNewBadge) {
+        matchNewBadge.style.display = (state.acceptOrMatched || []).length > 0
+          ? "inline-block"
+          : "none";
+      }
+    }, 0);
   }
 
-    async function renderAcceptedCandidate() {
+  
+
+  async function renderAcceptedCandidate() {
     const homeContent = document.getElementById("homeContent");
     homeContent.innerHTML = "";
 
@@ -376,6 +390,8 @@ function renderHome() {
         <h2>${t("match")}</h2>
         <p>${t("match.noCandidates")}</p>
       `;
+      const matchNewBadge = document.getElementById("matchNewBadge");
+      if (matchNewBadge) matchNewBadge.style.display = "none";
       return;
     }
 
@@ -383,7 +399,6 @@ function renderHome() {
     const userSnap = await getDoc(doc(db, "users", email));
     const u = userSnap.exists() ? userSnap.data() : {};
 
-    // 🔥 닉네임이 없는 경우 → 다음 후보로 넘어감
     if (!u.nickname || u.nickname.trim() === "") {
       state.acceptIndex++;
       if (state.acceptIndex < candidates.length) {
@@ -393,6 +408,9 @@ function renderHome() {
           <h2>${t("match")}</h2>
           <p>${t("match.noCandidates")}</p>
         `;
+        const matchNewBadge = document.getElementById("matchNewBadge");
+        if (matchNewBadge) matchNewBadge.style.display = "none";
+        return;
       }
       return;
     }
@@ -411,11 +429,12 @@ function renderHome() {
 
       <div class="introduction" style="display:none;">
         <p>${u.bio && u.bio.trim() ? u.bio : t("common.noIntroduction")}</p>
+        <div style="height: 195px;"></div>
       </div>
 
       <button class="toggle-intro-btn" data-email="${email}">${t("common.lookIntroduction")}</button>
 
-      <div style="display:flex; gap:10px; margin-top:20px;">
+      <div class="navigation-buttons" style="display:flex; gap:10px; margin-top:20px;">
         <button id="prevAccept" ${state.acceptIndex === 0 ? 'disabled' : ''}>${t("common.previous")}</button>
         <button id="nextAccept" ${state.acceptIndex === candidates.length - 1 ? 'disabled' : ''}>${t("common.next")}</button>
       </div>
@@ -423,19 +442,33 @@ function renderHome() {
 
     homeContent.innerHTML = html;
 
-    document.getElementById("prevAccept").onclick = () => {
-      if (state.acceptIndex > 0) {
-        state.acceptIndex--;
-        renderAcceptedCandidate();
-      }
-    };
+    const prevBtn = document.getElementById("prevAccept");
+    const nextBtn = document.getElementById("nextAccept");
 
-    document.getElementById("nextAccept").onclick = () => {
-      if (state.acceptIndex < candidates.length - 1) {
-        state.acceptIndex++;
-        renderAcceptedCandidate();
-      }
-    };
+    const isFirst = state.acceptIndex === 0;
+    const isLast = state.acceptIndex === candidates.length - 1;
+
+    if (prevBtn) {
+      prevBtn.style.opacity = isFirst ? "0.4" : "";
+      prevBtn.style.pointerEvents = isFirst ? "none" : "";
+      prevBtn.onclick = () => {
+        if (!isFirst) {
+          state.acceptIndex--;
+          renderAcceptedCandidate();
+        }
+      };
+    }
+
+    if (nextBtn) {
+      nextBtn.style.opacity = isLast ? "0.4" : "";
+      nextBtn.style.pointerEvents = isLast ? "none" : "";
+      nextBtn.onclick = () => {
+        if (!isLast) {
+          state.acceptIndex++;
+          renderAcceptedCandidate();
+        }
+      };
+    }
 
     const btn = document.querySelector(".toggle-intro-btn");
     if (btn) {
@@ -443,30 +476,55 @@ function renderHome() {
         const container = btn.parentElement;
         const basicInfo = container.querySelector(".basic-info");
         const intro = container.querySelector(".introduction");
+        const navBtns = container.querySelector(".navigation-buttons");
 
         const showingIntro = intro.style.display === "block";
         intro.style.display = showingIntro ? "none" : "block";
         basicInfo.style.display = showingIntro ? "block" : "none";
         btn.textContent = showingIntro ? t("common.lookIntroduction") : t("action.backToProfile");
+
+        if (navBtns) {
+          const prevBtn = navBtns.querySelector("#prevAccept");
+          const nextBtn = navBtns.querySelector("#nextAccept");
+
+          if (!showingIntro) {
+            [prevBtn, nextBtn].forEach(btn => {
+              btn.style.opacity = "0.4";
+              btn.style.pointerEvents = "none";
+            });
+          } else {
+            if (state.acceptIndex === 0) {
+              prevBtn.style.opacity = "0.4";
+              prevBtn.style.pointerEvents = "none";
+            } else {
+              prevBtn.style.opacity = "";
+              prevBtn.style.pointerEvents = "";
+            }
+
+            if (state.acceptIndex === candidates.length - 1) {
+              nextBtn.style.opacity = "0.4";
+              nextBtn.style.pointerEvents = "none";
+            } else {
+              nextBtn.style.opacity = "";
+              nextBtn.style.pointerEvents = "";
+            }
+          }
+        }
       });
     }
 
-    setTimeout(() => {
-      const chatBtn = document.getElementById("goToChatBtn");
-      if (chatBtn) {
-        chatBtn.onclick = async () => {
-          const chatId = [state.currentUserEmail, email].sort().join("-");
-          if (!document.getElementById("homeMenu")) await renderHome();
-
-          setActiveTab("chat");
-
-          setTimeout(() => {
-            renderChatTab();
-            renderChatRoom(chatId, email);
-          }, 0);
-        };
-      }
-    }, 0);
+    const chatBtn = document.getElementById("goToChatBtn");
+    if (chatBtn) {
+      chatBtn.onclick = async () => {
+        const chatId = [state.currentUserEmail, email].sort().join("-");
+        if (!document.getElementById("homeMenu")) await renderHome();
+        setActiveTab("chat");
+        setTimeout(() => {
+          renderChatTab();
+          renderChatRoom(chatId, email);
+        }, 0);
+      };
+    }
 
     const rejectBtn = document.getElementById("rejectBtn");
     if (rejectBtn) {
@@ -480,12 +538,16 @@ function renderHome() {
         renderAcceptedCandidate();
       };
     }
+
+    const stillUnseen = state.newAcceptances.filter(email => !state.acceptOrMatched.includes(email));
+    if (stillUnseen.length === 0) {
+      state.newAcceptances = [];
+      const badge = document.getElementById("matchNewBadge");
+      if (badge) badge.style.display = "none";
+    }
   }
 
-
-
   window.renderAcceptedCandidate = renderAcceptedCandidate;
-
 
   // 탭 전환 로직에 추가
   function setActiveTab(tab) {
@@ -888,6 +950,72 @@ function renderHome() {
 
     let isEditing = false;
 
+    function renderLanguageSettingView() {
+      const content = document.getElementById("homeContent");
+      if (!content) return;
+
+      const langBtnStyle = `
+        background-color: #ffffff;
+        border: 2px solid #6ee7b7;
+        color: #10b981;
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      `;
+
+      content.innerHTML = `
+        <h2 style="text-align:center; margin-bottom: 20px;">${t("profile.chooseLang") || "언어 선택"}</h2>
+        <div class="lang-select-wrapper" style="display: flex; flex-direction: column; gap: 15px;">
+          <button class="lang-select-btn" data-lang="ko" style="${langBtnStyle}">한국어</button>
+          <button class="lang-select-btn" data-lang="en" style="${langBtnStyle}">English</button>
+          <button class="lang-select-btn" data-lang="jp" style="${langBtnStyle}">日本語</button>
+          <button class="lang-select-btn" data-lang="ch" style="${langBtnStyle}">中文</button>
+          <button id="backToProfileBtn" style="
+            margin-top: 30px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          ">${t("common.backToProfile") || "프로필로 돌아가기"}</button>
+        </div>
+      `;
+
+      // 언어 버튼: 클릭 및 hover
+      content.querySelectorAll(".lang-select-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const selectedLang = btn.dataset.lang;
+          state.currentLang = selectedLang;
+          localStorage.setItem("lang", selectedLang);
+          renderProfileTab();
+        });
+        btn.addEventListener("mouseover", () => {
+          btn.style.backgroundColor = "#ecfdf5";
+        });
+        btn.addEventListener("mouseout", () => {
+          btn.style.backgroundColor = "#ffffff";
+        });
+      });
+
+      // 돌아가기 버튼: 클릭 및 hover
+      const backBtn = document.getElementById("backToProfileBtn");
+      if (backBtn) {
+        backBtn.onclick = () => renderProfileTab();
+
+        backBtn.addEventListener("mouseover", () => {
+          backBtn.style.backgroundColor = "#0f9f77";
+        });
+        backBtn.addEventListener("mouseout", () => {
+          backBtn.style.backgroundColor = "#10b981";
+        });
+      }
+    }
+
     function renderViewMode() {
       const u = data;  
 
@@ -912,14 +1040,8 @@ function renderHome() {
         <div id="bioView" style="white-space:pre-line; margin-bottom:10px;">${bioText()}</div>
         <button id="editBioBtn">✏ ${t("profile.edit")}</button>
 
-        <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px;">
+        <div style="margin-top: 0px;">
           <button id="langToggleBtn">🌐 ${t("profile.changeLang")}</button>
-          <div id="langList" style="display:none; margin-top: 10px;">
-            <button class="langOption" data-lang="ko">한국어</button>
-            <button class="langOption" data-lang="en">English</button>
-            <button class="langOption" data-lang="jp">日本語</button>
-            <button class="langOption" data-lang="ch">中文</button>
-          </div>
         </div>
       `;
 
@@ -929,52 +1051,80 @@ function renderHome() {
       };
 
       document.getElementById("langToggleBtn").onclick = () => {
-        const langList = document.getElementById("langList");
-        langList.style.display = langList.style.display === "none" ? "block" : "none";
+        renderLanguageSettingView();
       };
 
-      document.querySelectorAll(".langOption").forEach(btn => {
-        btn.onclick = () => {
-          const selectedLang = btn.dataset.lang;
-          state.currentLang = selectedLang;
-          localStorage.setItem("lang", selectedLang);
-          renderHome(); // ✅ nav 포함 전체 다시 그림
-          setTimeout(() => setActiveTab("profile"), 0); // 현재 탭 복원
-        };
-      });
+      const langToggleBtn = document.getElementById("langToggleBtn");
+      if (langToggleBtn) {
+        langToggleBtn.style.backgroundColor = "#ffffff";
+        langToggleBtn.style.border = "2px solid #6ee7b7"; // 연한 에메랄드 border
+        langToggleBtn.style.color = "#10b981";             // 연한 에메랄드 글자색
+        langToggleBtn.style.padding = "12px 16px";
+        langToggleBtn.style.fontSize = "16px";
+        langToggleBtn.style.borderRadius = "8px";
+        langToggleBtn.style.cursor = "pointer";
+        langToggleBtn.style.transition = "background-color 0.2s";
+
+        langToggleBtn.addEventListener("mouseover", () => {
+          langToggleBtn.style.backgroundColor = "#ecfdf5"; // hover 시 연한 배경
+        });
+
+        langToggleBtn.addEventListener("mouseout", () => {
+          langToggleBtn.style.backgroundColor = "#ffffff"; // 원래대로
+        });
+      }
     }
 
     function enableBioEditMode() {
-    const bioView = document.getElementById("bioView");
-    const editBtn = document.getElementById("editBioBtn");
+      const bioView = document.getElementById("bioView");
+      const editBtn = document.getElementById("editBioBtn");
 
-    if (!bioView || !editBtn) return;
+      if (!bioView || !editBtn) return;
 
-    // bioView 영역을 textarea로 교체
-    const currentBio = bioView.textContent.trim();
-    bioView.outerHTML = `
-      <textarea id="bioInput" rows="6" style="width:100%;">${currentBio}</textarea>
-      <br>
-      <button id="saveBioBtn">${t("profile.save")}</button>
-      <button id="cancelBioBtn">${t("profile.cancel")}</button>
-    `;
+      // bioView 영역을 textarea로 교체
+      const currentBio = bioView.textContent.trim();
+      bioView.outerHTML = `
+        <textarea id="bioInput"
+          rows="6"
+          style="
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #42c7bc;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            box-sizing: border-box;
+            resize: vertical;
+            background-color: #fff;
+            line-height: 1.5;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+          "
+          onfocus="this.style.borderColor='#42c7bc'; this.style.boxShadow='0 0 0 4px rgba(66, 199, 188, 0.2)'"
+          onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'"
+        >${currentBio}</textarea>
 
-    // 버튼 숨기기
-    editBtn.style.display = "none";
+        <br>
+        <button id="saveBioBtn">${t("profile.save")}</button>
+        <button id="cancelBioBtn">${t("profile.cancel")}</button>
+      `;
 
-    document.getElementById("saveBioBtn").onclick = async () => {
-      const newBio = document.getElementById("bioInput").value.trim();
-      state.currentUserData.bio = newBio;
+      // 버튼 숨기기
+      editBtn.style.display = "none";
 
-      const docRef = doc(db, "users", state.currentUserEmail);
-      await setDoc(docRef, state.currentUserData);
-      renderProfileTab(); // 다시 보기 모드로
-    };
+      document.getElementById("saveBioBtn").onclick = async () => {
+        const newBio = document.getElementById("bioInput").value.trim();
+        state.currentUserData.bio = newBio;
 
-    document.getElementById("cancelBioBtn").onclick = () => {
-      renderProfileTab(); // 다시 보기 모드로
-    };
-  }
+        const docRef = doc(db, "users", state.currentUserEmail);
+        await setDoc(docRef, state.currentUserData);
+        renderProfileTab(); // 다시 보기 모드로
+      };
+
+      document.getElementById("cancelBioBtn").onclick = () => {
+        renderProfileTab(); // 다시 보기 모드로
+      };
+    }
 
     renderViewMode();
   }
@@ -986,7 +1136,6 @@ window.renderHome = renderHome;
 // DOM 준비되면 로그인 화면부터 띄우기
 document.addEventListener('DOMContentLoaded', () => {
   renderLogin();
-  renderCalendar(new Date());
 });
 
 // 달력용 변수와 초기 날짜 설정
@@ -994,50 +1143,14 @@ const monthLabel = document.getElementById("monthLabel");
 const calendarBody = document.getElementById("calendarBody");
 let currentDate = new Date();
 
-// 달력 렌더링 함수
-function renderCalendar(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const lastDate = new Date(year, month + 1, 0).getDate();
-
-  // 월 텍스트 출력
-  monthLabel.textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
-
-  // 날짜 HTML 생성
-  let html = "";
-  let day = 1;
-  for (let i = 0; i < 6; i++) {
-    html += "<tr>";
-    for (let j = 0; j < 7; j++) {
-      if (i === 0 && j < firstDay) {
-        html += "<td></td>";
-      } else if (day > lastDate) {
-        html += "<td></td>";
-      } else {
-        html += `<td>${day}</td>`;
-        day++;
-      }
-    }
-    html += "</tr>";
-    if (day > lastDate) break;
-  }
-  calendarBody.innerHTML = html;
-}
-
 // 이전/다음 월 이동
 window.prevMonth = () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
-  renderCalendar(currentDate);
 };
 
 window.nextMonth = () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
-  renderCalendar(currentDate);
 };
-
-// 초기에 한번 렌더링
-renderCalendar(currentDate);
 
 // --- 현재 매칭 질문 단계 화면 렌더링 ---
 export function renderCurrentMatchStep() {
@@ -1671,46 +1784,11 @@ export function renderExchangeTab() {
 
   let currentDate = new Date();
 
-  function renderCalendar(date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const lastDate = new Date(year, month + 1, 0).getDate();
-
-    monthLabel.textContent = date.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-
-    let html = "";
-    let day = 1;
-    for (let i = 0; i < 6; i++) {
-      html += "<tr>";
-      for (let j = 0; j < 7; j++) {
-        if (i === 0 && j < firstDay) {
-          html += "<td></td>";
-        } else if (day > lastDate) {
-          html += "<td></td>";
-        } else {
-          html += `<td>${day}</td>`;
-          day++;
-        }
-      }
-      html += "</tr>";
-      if (day > lastDate) break;
-    }
-    calendarBody.innerHTML = html;
-  }
-
   prevBtn.onclick = () => {
     currentDate.setMonth(currentDate.getMonth() - 1);
-    renderCalendar(currentDate);
   };
 
   nextBtn.onclick = () => {
     currentDate.setMonth(currentDate.getMonth() + 1);
-    renderCalendar(currentDate);
   };
-
-  renderCalendar(currentDate);
 }
