@@ -347,9 +347,9 @@ const i18n = {
     nav: {
       home: "Home",
       exchange: "Program",
-      match: "Match",
+      match: "Matching",
       chat: "Chat",
-      profile: "My Info",
+      profile: "Profile",
       new: "NEW"
     },
     signup: {
@@ -557,10 +557,10 @@ const i18n = {
     },
     nav: {
       home: "ホーム",
-      exchange: "プログラム",
-      match: "マッチング",
-      chat: "チャット",
-      profile: "マイページ",
+      exchange: "イベント",
+      match: "マッチ",
+      chat: "トーク",
+      profile: "マイ",
       new: "NEW"
     },
     signup: {
@@ -768,10 +768,10 @@ const i18n = {
     },
     nav: {
       home: "首页",
-      exchange: "项目",
+      exchange: "活动",
       match: "配对",
       chat: "聊天",
-      profile: "我的资料",
+      profile: "我的信息",
       new: "新"
     },
     signup: {
