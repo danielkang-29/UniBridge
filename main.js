@@ -1,6 +1,7 @@
-import { db }            from './firebase.js';
+import { db, auth }            from './firebase.js';
 import { doc, setDoc, getDoc, getDocs, addDoc, onSnapshot, query, orderBy, serverTimestamp, collection, where, documentId } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {
   renderLogin,
   renderSignupQuestion,
@@ -12,48 +13,228 @@ import {
   t,
 } from './auth.js';
 
+function getBioText(bioRaw) {
+  const trimmed = bioRaw?.trim();
+  if (!trimmed) return t("common.noBio");
+  return trimmed;
+}
+
+// 최상단에 onAuthStateChanged 유지
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    state.currentUserEmail = user.email;
+    const userSnap = await getDoc(doc(db, "users", user.email));
+    if (userSnap.exists()) {
+      state.currentUserData = userSnap.data();
+
+      // DOM이 준비됐는지 체크해서 준비 안 됐으면 기다리기
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+          renderHome();
+        });
+      } else {
+        renderHome();
+      }
+    } else {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+          renderLogin();
+        });
+      } else {
+        renderLogin();
+      }
+    }
+  } else {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        renderLogin();
+      });
+    } else {
+      renderLogin();
+    }
+  }
+});
+
 async function handleLogin() {
   await loginUser();                // 로그인만 수행
+  function renderTopNav() {
+    if (document.getElementById("topNav")) return;
+
+    const nav = document.createElement("nav");
+    nav.id = "topNav";
+    nav.innerHTML = `
+      <button class="tab-btn" data-tab="home">${t("nav.home")}</button>
+      <button class="tab-btn" data-tab="exchange">${t("nav.exchange")}</button>
+      <button class="tab-btn" data-tab="match">${t("nav.match")}</button>
+      <button class="tab-btn" data-tab="chat">${t("nav.chat")}</button>
+      <button class="tab-btn" data-tab="profile">${t("nav.profile")}</button>
+      <div id="tabIndicator"></div>
+    `;
+
+    document.body.prepend(nav); // 원하는 위치에 prepend 또는 append
+    initTabNavigation();        // 아래에 정의
+  }
   listenForIncomingCalls();         // 통화 수신 대기 시작
 }
 
 function updateTopNavText() {
-  if (!document.getElementById("homeMenu")) return;
+  const homeMenu = document.getElementById("homeMenu");
+  if (!homeMenu) return;
 
-  document.getElementById("navHomeBtn").textContent = t("nav.home");
-  document.getElementById("navExchangeBtn").textContent = t("nav.exchange");
-  document.getElementById("navMatchingBtn").childNodes[0].textContent = t("nav.match");
-  document.getElementById("navChatBtn").textContent = t("nav.chat");
-  document.getElementById("navProfileBtn").textContent = t("nav.profile");
+  const map = {
+    navHomeBtn: "nav.home",
+    navExchangeBtn: "nav.exchange",
+    navMatchingBtn: "nav.match",
+    navChatBtn: "nav.chat",
+    navProfileBtn: "nav.profile",
+  };
+
+  for (const [id, key] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === "navMatchingBtn" && el.childNodes.length > 0) {
+        el.childNodes[0].textContent = t(key); // 🔥 childNodes[0] 사용 중이면 유지
+      } else {
+        el.textContent = t(key);
+      }
+    }
+  }
 
   const newBadge = document.getElementById("newBadge");
   if (newBadge) {
     newBadge.textContent = t("nav.new");
+    newBadge.style.display = (state.newAcceptances?.length ?? 0) > 0 ? "inline-block" : "none";
   }
 }
+
 function renderSimpleNavBackButton() {
   const nav = document.createElement("nav");
   nav.innerHTML = `
-    <button id="backToHomeBtn" class="active">← ${t("common.backToHome") || "홈으로 돌아가기"}</button>
+    <div style="position: relative; width: 100%; display: flex; justify-content: center;">
+      <button id="backToHomeBtn" class="active" style="position: relative;">
+        ← ${t("common.backToHome") || "홈으로 돌아가기"}
+        <div id="tabIndicator" style="
+          display: none; /* ✅ 바 숨기기 */
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          height: 3px;
+          width: 100%;
+          background-color: #10b981;
+          transition: all 0.3s ease;"></div>
+      </button>
+    </div>
   `;
+
   nav.style.display = "flex";
-  nav.style.backgroundColor = "white";
+  nav.style.backgroundColor = "#f5f5f5";
   nav.style.borderBottom = "1px solid #ccc";
   nav.style.position = "sticky";
   nav.style.top = "0";
   nav.style.zIndex = "100";
 
-  const btn = nav.querySelector("button");
-  btn.style.flex = "1";
+  const btn = nav.querySelector("#backToHomeBtn");
+  btn.style.flex = "0 1 auto";
   btn.style.padding = "15px 0";
   btn.style.border = "none";
-  btn.style.background = "white";
+  btn.style.background = "#fcfcfc";
   btn.style.fontSize = "16px";
   btn.style.fontWeight = "700";
 
   btn.onclick = () => renderHome();
 
   return nav;
+}
+
+function renderChatBackButton() {
+  const nav = document.createElement("nav");
+  nav.id = "backNav"; // 혹시 중복 제거 용이하도록 ID 부여
+  nav.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ccc;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    height: 41px;
+    padding: 0;
+    position: relative;
+    box-sizing: border-box;
+  `;
+
+  const btn = document.createElement("button");
+  btn.id = "backToChatListBtn";
+  btn.textContent = "<";
+
+const indicator = document.createElement("div");
+indicator.id = "tabIndicator";
+indicator.style.cssText = `
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background-color: #10b981;
+  transition: all 0.3s ease;
+`;
+
+btn.appendChild(indicator);
+
+  btn.className = "active";
+  btn.style.cssText = `
+    border: none;
+    background: none;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 8px;
+    color: #3fcfa4;
+    margin: 0;
+    height: 100%;
+    width: 2em;
+    text-align: left;
+    transform: translateY(-6px);
+  `;
+
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = `
+    position: relative;
+    width: 2em;
+    display: flex;
+    justify-content: flex-start;
+  `;
+
+  // ✅ 버튼 클릭 시 채팅 탭으로 이동 + 상단바 복원
+  btn.onclick = () => renderHome("chat");
+
+  wrapper.appendChild(btn);
+  nav.appendChild(wrapper);
+  return nav;
+}
+
+function initTabNavigation() {
+  const buttons = document.querySelectorAll(".tab-btn");
+  const indicator = document.getElementById("tabIndicator");
+
+  buttons.forEach((btn, index) => {
+    btn.addEventListener("click", () => {
+      // 탭에 따른 화면 전환 로직은 여기에 추가
+      moveTabIndicator(index);
+    });
+  });
+
+  // 초기 위치 설정 (예: 0번)
+  moveTabIndicator(0);
+}
+
+function moveTabIndicator(index) {
+  const indicator = document.getElementById("tabIndicator");
+  if (!indicator) return;
+  indicator.style.transform = `translateX(${index * 100}%)`;
 }
 
 function renderSimpleHomeView() {
@@ -65,7 +246,7 @@ function renderSimpleHomeView() {
 
   const box = document.createElement("div");
   box.style.padding = "40px 20px";
-  box.style.background = "white";
+  box.style.background = "#fcfcfc";
   box.style.borderRadius = "10px";
   box.style.boxShadow = "0 0 10px rgba(0,0,0,0.1)";
   box.style.maxWidth = "400px";
@@ -166,7 +347,7 @@ const servers = {
 };
 
 // --- 홈 화면, 탭 UI 보여주기 ---
-function renderHome() {
+function renderHome(defaultTab = "home") {
   const container = document.getElementById("app");
   container.innerHTML = `
     <nav id="homeMenu">
@@ -174,12 +355,13 @@ function renderHome() {
       <button data-tab="exchange" id="navExchangeBtn"></button>
       <button data-tab="matching" id="navMatchingBtn" class="nav-btn">
         ${t("nav.match")}
-        <span id="matchNewBadge" class="new-badge" style="display: ${state.newAcceptances.length ? 'inline-block' : 'none'};">
+        <span id="matchNewBadge" class="new-badge" style="display: none;">
           ${t("nav.new")}
         </span>
       </button>
       <button data-tab="chat" id="navChatBtn"></button>
       <button data-tab="profile" id="navProfileBtn"></button>
+      <div id="tabIndicator"></div>
     </nav>
     <div id="homeContent" style="flex: 1; padding: 16px 10px; box-sizing: border-box;">
     </div>
@@ -194,7 +376,7 @@ function renderHome() {
     }
   });
 
-  setActiveTab("home");
+  setActiveTab(defaultTab);
   updateTopNavText();
 
   const homeMenu = document.getElementById("homeMenu");
@@ -232,7 +414,7 @@ function renderHome() {
     homeContent.innerHTML = `
       <h2>${t("common.programschedule")}</h2>
       <div class="calendar-wrapper">
-        <div style="text-align:center; font-size:16px; font-weight:500; margin-bottom:4px;" id="yearLabel">${calendarYear}</div>
+        <div style="text-align:center; font-size:18px; font-weight:500; margin-bottom:4px; color:#10b981;" id="yearLabel">${calendarYear}</div>
         <div class="calendar-header">
           <button id="prevMonthBtn">&lt;</button>
           <span id="monthLabel">${monthNames[calendarMonth]}</span>
@@ -308,24 +490,32 @@ function renderHome() {
     const homeContent = document.getElementById("homeContent");
     if (!homeContent) return;
 
+    // 🔧 먼저 로딩 화면 보여줌
     homeContent.innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        <p>${t("loading")}</p>
+      <div style="text-align:center; padding:30px;">
+        <p style="font-size:18px; margin-bottom:15px;">${t("loading")}</p>
         <div class="loader" style="
-          margin: 20px auto;
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3498db;
+          border: 8px solid #f3f3f3;
+          border-top: 8px solid #10b981;
           border-radius: 50%;
-          width: 30px;
-          height: 30px;
+          width: 50px;
+          height: 50px;
           animation: spin 1s linear infinite;
+          margin: 0 auto;
         "></div>
       </div>
+
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
     `;
 
     if (!state.currentUserEmail) return;
 
-    // 🔧 모든 matches 문서 불러오기 (documentId 제거)
+    // ✅ 매칭 데이터 수집
     const snapshot = await getDocs(collection(db, "matches"));
     const matchedUsers = [];
 
@@ -338,19 +528,17 @@ function renderHome() {
       const [email1, email2] = matchId.split("-");
       const other = email1 === state.currentUserEmail ? email2 : email1;
 
-      // ✅ 양쪽 모두 수락한 경우만 포함
       if (match[email1] === true && match[email2] === true) {
         matchedUsers.push(other);
       }
     });
 
-    // 🔧 상태 업데이트 - 익명/닉네임 없는 계정 제거
-    const acceptSet = new Set(
-      [...(state.newAcceptances || []), ...(matchedUsers || [])]
-        .filter(id => typeof id === 'string' && id.trim() !== '')
-    );
+    // ✅ 사용자 필터링
+    const acceptSet = new Set([
+      ...(state.newAcceptances || []),
+      ...(matchedUsers || [])
+    ].filter(id => typeof id === 'string' && id.trim() !== ''));
 
-    // ✅ nickname 없는 사용자 제거
     const filtered = [];
     for (const email of acceptSet) {
       const userSnap = await getDoc(doc(db, "users", email));
@@ -360,24 +548,25 @@ function renderHome() {
       }
     }
 
+    // ✅ 상태 세팅
     state.matchedUsers = matchedUsers;
     state.acceptOrMatched = filtered;
     state.acceptIndex = 0;
 
+    // ✅ 준비가 다 된 후 렌더링
     renderAcceptedCandidate();
 
-    // ✅ NEW 배지 업데이트는 DOM 렌더링 후에 해야 하므로 setTimeout으로
-    setTimeout(() => {
-      const matchNewBadge = document.getElementById("matchNewBadge");
-      if (matchNewBadge) {
-        matchNewBadge.style.display = (state.acceptOrMatched || []).length > 0
-          ? "inline-block"
-          : "none";
-      }
-    }, 0);
+    // ✅ NEW 배지 처리 (setTimeout 제거)
+    const matchNewBadge = document.getElementById("matchNewBadge");
+    if (matchNewBadge) {
+      matchNewBadge.style.display = filtered.length > 0 ? "inline-block" : "none";
+    }
+    
+    const badge = document.getElementById("matchNewBadge");
+    if (badge) {
+      badge.style.display = (state.newAcceptances?.length ?? 0) > 0 ? "inline-block" : "none";
+    }
   }
-
-  
 
   async function renderAcceptedCandidate() {
     const homeContent = document.getElementById("homeContent");
@@ -575,6 +764,8 @@ function renderHome() {
   // 탭 활성화 함수
   function setActiveTab(tabName, startMatchingFlow = false, callbackFn) {
     const tabs = ["home", "exchange", "matching", "chat", "profile"];
+    const index = tabs.indexOf(tabName);
+    if (index !== -1) moveTabIndicator(index);
     tabs.forEach(t => {
       const btn = document.getElementById(`nav${capitalize(t)}Btn`);
       if (btn) btn.classList.remove("active");
@@ -607,6 +798,9 @@ function renderHome() {
   }
 
   async function renderChatTab(callbackFn) {
+    const oldBackNav = document.getElementById("backToChatListBtn")?.closest("nav");
+    if (oldBackNav) oldBackNav.remove();
+
     const homeContent = document.getElementById("homeContent");
     homeContent.innerHTML = `<h2>${t("chat.chat")}</h2><div id="chatList"></div>`;
 
@@ -736,6 +930,8 @@ function renderHome() {
     if (typeof callbackFn === "function") callbackFn();
   }
 
+  window.renderChatTab = renderChatTab; // ✅ 이 줄 추가
+
   function formatTime(timestamp) {
     const date = timestamp?.toDate?.() || new Date(timestamp);
     if (!date) return '';
@@ -760,28 +956,71 @@ function renderHome() {
     const homeContent = document.getElementById("homeContent");
     if (!homeContent) return;
 
+    // ✅ 기존 상단바 제거
+    const oldNav = document.getElementById("homeMenu");
+    if (oldNav) oldNav.remove();
+
+    // ✅ "← 홈으로 돌아가기" 버튼 삽입
     const userSnap = await getDoc(doc(db, "users", partnerEmail));
     const partnerData = userSnap.exists() ? userSnap.data() : {};
-    const nickname = partnerData.nickname || partnerEmail;
+    const nickname = partnerData.nickname || partnerEmail;  // ✅ 먼저 선언
+
+    const backNav = renderChatBackButton();
+    const container = document.getElementById("app");
+    container.insertBefore(backNav, homeContent);
+
+    // ✅ 이제 안전하게 사용 가능
+    const name = document.createElement("span");
+    name.textContent = nickname;
+    name.style.cssText = `
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%) translateY(-7px); 
+      font-size: 22px;
+      color: #10b981;
+      font-weight: 600;
+      white-space: nowrap;
+    `;
+
+    backNav.appendChild(name);
 
     homeContent.innerHTML = `
-      <h2>${t("chat.title", { nickname })}</h2>
-      <button id="callBtn" data-calling="false">${t("chat.call")}</button>
-      <div id="callStatus" style="display:none; color:green; font-weight:bold;">${t("chat.inCall")}</div>
+      <div id="callStatus" style="display:none; color:green; font-weight:bold;">
+        ${t("chat.inCall")}
+      </div>
       <audio id="remoteAudio" autoplay></audio>
 
       <div id="chatBox" style="height:300px; overflow-y:scroll; border:1px solid #ccc; padding:10px;"></div>
-      <div style="margin-top:10px;">
-        <input type="file" id="imageInput" accept="image/*" style="display:none;" />
-        <label for="imageInput" id="fileLabel" class="custom-file-label">${t("chat.chooseFile")}</label>
-        <span id="fileName" style="margin-left:10px; color:gray;">${t("chat.noFile")}</span>
+
+      <input type="file" id="imageInput" accept="image/*" style="display:none;" />
+
+      <div id="chatInputRow" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+        <label for="imageInput" id="fileLabel" class="custom-file-label">
+          <span class="plus-icon">+</span>
+        </label>
+        <input type="text" id="chatInput" placeholder="${t("chat.inputPlaceholder")}" />
       </div>
-      <input type="text" id="chatInput" placeholder="${t("chat.inputPlaceholder")}" />
+
       <button id="sendBtn">${t("chat.send")}</button>
-      <button id="backBtn">${t("chat.back")}</button>
     `;
 
     const chatBox = document.getElementById("chatBox");
+    chatBox.style.cssText = `
+      height: 300px;
+      overflow-y: scroll;
+      padding: 10px;
+      border: none;
+      background-color: #f5f5f5;
+
+      scrollbar-width: none;       /* Firefox용 */
+      -ms-overflow-style: none;    /* IE/Edge용 */
+    `;
+
+    chatBox.style.overflowY = "scroll";
+
+    // ✅ Webkit 계열(Chrome, Safari 등)에선 따로 ::-webkit-scrollbar 숨기기 필요
+    chatBox.classList.add("hide-scroll");
+
     const chatInput = document.getElementById("chatInput");
     const imageInput = document.getElementById("imageInput");
 
@@ -939,9 +1178,6 @@ function renderHome() {
       "No introduction.",
       "暂无自我介绍。"
     ];
-    if (defaultMessages.includes(data.bio?.trim())) {
-      data.bio = "";
-    }
 
     function formatMulti(arr) {
       if (!arr) return "";
@@ -975,7 +1211,7 @@ function renderHome() {
           <button id="backToProfileBtn" style="
             margin-top: 30px;
             background-color: #10b981;
-            color: white;
+            color: #fcfcfc;
             border: none;
             padding: 12px 16px;
             font-size: 16px;
@@ -992,6 +1228,9 @@ function renderHome() {
           const selectedLang = btn.dataset.lang;
           state.currentLang = selectedLang;
           localStorage.setItem("lang", selectedLang);
+
+          updateTopNavText(); // ✅ 상단바 텍스트 즉시 갱신
+
           renderProfileTab();
         });
         btn.addEventListener("mouseover", () => {
@@ -1017,7 +1256,7 @@ function renderHome() {
     }
 
     function renderViewMode() {
-      const u = data;  
+      const u = data;
 
       let rawBio = typeof u.bio === "string" ? u.bio.trim() : "";
       let bioText = () => {
@@ -1040,9 +1279,7 @@ function renderHome() {
         <div id="bioView" style="white-space:pre-line; margin-bottom:10px;">${bioText()}</div>
         <button id="editBioBtn">✏ ${t("profile.edit")}</button>
 
-        <div style="margin-top: 0px;">
-          <button id="langToggleBtn">🌐 ${t("profile.changeLang")}</button>
-        </div>
+        <div id="actionButtonRow" style="margin-top: 0px;"></div>
       `;
 
       document.getElementById("editBioBtn").onclick = () => {
@@ -1050,29 +1287,56 @@ function renderHome() {
         enableBioEditMode();
       };
 
-      document.getElementById("langToggleBtn").onclick = () => {
-        renderLanguageSettingView();
+      const actionRow = document.getElementById("actionButtonRow");
+
+      // --- 언어 변경 버튼 ---
+      const langToggleBtn = document.createElement("button");
+      langToggleBtn.id = "langToggleBtn";
+      langToggleBtn.textContent = `🌐 ${t("profile.changeLang")}`;
+      langToggleBtn.onclick = () => renderLanguageSettingView();
+
+      // --- 로그아웃 버튼 ---
+      const logoutBtn = document.createElement("button");
+      logoutBtn.id = "logoutBtn";
+      logoutBtn.textContent = t("common.logout") || "로그아웃";
+      logoutBtn.onclick = async () => {
+        const { auth } = await import('./firebase.js');
+        const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
+        await signOut(auth);
+        state.currentUserEmail = null;
+        state.currentUserData = null;
+        renderLogin();
       };
 
-      const langToggleBtn = document.getElementById("langToggleBtn");
-      if (langToggleBtn) {
-        langToggleBtn.style.backgroundColor = "#ffffff";
-        langToggleBtn.style.border = "2px solid #6ee7b7"; // 연한 에메랄드 border
-        langToggleBtn.style.color = "#10b981";             // 연한 에메랄드 글자색
-        langToggleBtn.style.padding = "12px 16px";
-        langToggleBtn.style.fontSize = "16px";
-        langToggleBtn.style.borderRadius = "8px";
-        langToggleBtn.style.cursor = "pointer";
-        langToggleBtn.style.transition = "background-color 0.2s";
+      // --- 스타일 일괄 적용 ---
+      [langToggleBtn, logoutBtn].forEach(btn => {
+        btn.style.backgroundColor = "#ffffff";
+        btn.style.border = "2px solid #6ee7b7";
+        btn.style.color = "#10b981";
+        btn.style.padding = "12px 16px";
+        btn.style.fontSize = "16px";
+        btn.style.borderRadius = "8px";
+        btn.style.cursor = "pointer";
+        btn.style.transition = "background-color 0.2s";
 
-        langToggleBtn.addEventListener("mouseover", () => {
-          langToggleBtn.style.backgroundColor = "#ecfdf5"; // hover 시 연한 배경
+        btn.addEventListener("mouseover", () => {
+          btn.style.backgroundColor = "#ecfdf5";
         });
+        btn.addEventListener("mouseout", () => {
+          btn.style.backgroundColor = "#ffffff";
+        });
+      });
 
-        langToggleBtn.addEventListener("mouseout", () => {
-          langToggleBtn.style.backgroundColor = "#ffffff"; // 원래대로
-        });
-      }
+      // --- 수평 정렬된 버튼 컨테이너 ---
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.gap = "10px";
+      row.style.marginTop = "10px";
+
+      row.appendChild(langToggleBtn);
+      row.appendChild(logoutBtn);
+
+      actionRow.appendChild(row);
     }
 
     function enableBioEditMode() {
@@ -1114,7 +1378,13 @@ function renderHome() {
 
       document.getElementById("saveBioBtn").onclick = async () => {
         const newBio = document.getElementById("bioInput").value.trim();
-        state.currentUserData.bio = newBio;
+        const defaultBios = [
+          "자기소개가 없습니다.",
+          "No introduction.",
+          "自己紹介がありません。",
+          "暂无自我介绍。"
+        ];
+        state.currentUserData.bio = defaultBios.includes(newBio) ? "" : newBio;
 
         const docRef = doc(db, "users", state.currentUserEmail);
         await setDoc(docRef, state.currentUserData);
@@ -1132,11 +1402,6 @@ function renderHome() {
 
 // 전역에 바로 할당
 window.renderHome = renderHome;
-
-// DOM 준비되면 로그인 화면부터 띄우기
-document.addEventListener('DOMContentLoaded', () => {
-  renderLogin();
-});
 
 // 달력용 변수와 초기 날짜 설정
 const monthLabel = document.getElementById("monthLabel");
@@ -1792,3 +2057,19 @@ export function renderExchangeTab() {
     currentDate.setMonth(currentDate.getMonth() + 1);
   };
 }
+
+function openOverlayView(htmlContent) {
+  const overlay = document.getElementById("overlayPage");
+  overlay.innerHTML = htmlContent;
+  overlay.style.display = "block";
+}
+
+function closeOverlayView() {
+  const overlay = document.getElementById("overlayPage");
+  overlay.style.display = "none";
+  overlay.innerHTML = "";
+}
+
+
+// DOM 준비되면 로그인 화면부터 띄우기
+document.addEventListener('DOMContentLoaded', () => {});
