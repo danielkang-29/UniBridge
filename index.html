@@ -86,6 +86,16 @@
       padding: 0;
     }
 
+    .link-btn:hover,
+    .link-btn:focus,
+    .link-btn:active {
+      background: none !important;
+      color: var(--primary-color) !important;
+      text-decoration: underline !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
     nav {
       display: flex;
       background-color: white;
@@ -324,6 +334,27 @@
       margin-top: 20px;
     }
 
+    .nav-btn {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* NEW 배지 */
+    .new-badge {
+      position: absolute;
+      top: 6px;
+      right: 20px; /* 필요 시 숫자 조정 */
+      background: red;
+      color: white;
+      font-size: 10px;
+      padding: 2px 5px;
+      border-radius: 10px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
     @media (max-width: 400px) {
       input, select, button {
         font-size: 15px;
@@ -346,16 +377,7 @@
     import './main.js';
 
     document.addEventListener("DOMContentLoaded", () => {
-      renderLogin();
     });
-
-    const navExchangeBtn = document.getElementById("navExchangeBtn");
-    if (navExchangeBtn) {
-      navExchangeBtn.addEventListener("click", () => {
-        setActiveTab("exchange");
-        renderExchangeTab();
-      });
-    }
   </script>
 </body>
 </html>
