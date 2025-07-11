@@ -1006,7 +1006,7 @@ function renderHome(defaultTab = "home") {
 
     const chatBox = document.getElementById("chatBox");
     chatBox.style.cssText = `
-      height: 300px;
+      height: 500px;
       overflow-y: scroll;
       padding: 10px;
       border: none;
@@ -1292,7 +1292,7 @@ function renderHome(defaultTab = "home") {
       // --- 언어 변경 버튼 ---
       const langToggleBtn = document.createElement("button");
       langToggleBtn.id = "langToggleBtn";
-      langToggleBtn.textContent = `🌐 ${t("profile.changeLang")}`;
+      langToggleBtn.textContent = `🌐`;
       langToggleBtn.onclick = () => renderLanguageSettingView();
 
       // --- 로그아웃 버튼 ---
