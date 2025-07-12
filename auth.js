@@ -100,7 +100,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDBW_188kA6WEX73dw3Kk3tF3rZ9746UKM",
   authDomain: "unibridge-b06bd.firebaseapp.com",
   projectId: "unibridge-b06bd",
-  storageBucket: "unibridge-b06bd.appspot.com",  // ✅ ← 여기가 중요! .firebasestorage.app → .appspot.com 으로 수정
+  storageBucket: "unibridge-b06bd.firebasestorage.app",
   messagingSenderId: "405623255959",
   appId: "1:405623255959:web:dbd82ea8512b39f9decad2",
   measurementId: "G-0HEQRN2K98"
@@ -150,7 +150,7 @@ const i18n = {
       q5: "6. MBTI를 알려주세요",
       q6: "7. 성격을 알려주세요 (중복 선택 가능)",
       q7: "8. 연락 빈도는 어떻게 되시나요?",
-      q8: "9. 매칭 목적을 알려주세요 (중복 선택 가능)",
+      q8: "9. 관심사를 알려주세요 (중복 선택 가능)",
       finalTitle: "계정 생성 - 이메일과 비밀번호 입력",
       emailLabel: "학교 공식 이메일",
       emailPlaceholder: "이메일 입력",
@@ -227,7 +227,7 @@ const i18n = {
       major: "학과",
       mbti: "MBTI",
       personality: "성격",
-      purpose: "매칭 목적"
+      purpose: "관심사"
     },
     action: {
       accept: "수락",
@@ -308,7 +308,7 @@ const i18n = {
       major: "학과",
       region: "사는 곳",
       mbti: "MBTI",
-      purpose: "매칭 목적",
+      purpose: "관심사",
       personality: "성격",
       bioTitle: "자기소개",
       noBio: "아직 자기소개가 없습니다.",
@@ -438,7 +438,7 @@ const i18n = {
       major: "Major",
       mbti: "MBTI",
       personality: "Personality",
-      purpose: "Match Purpose"
+      purpose: "Interests"
     },
     action: {
       accept: "Accept",
@@ -519,7 +519,7 @@ const i18n = {
       major: "Major",
       region: "Location",
       mbti: "MBTI",
-      purpose: "Match Purpose",
+      purpose: "Interests",
       personality: "Personality",
       bioTitle: "About Me",
       noBio: "No bio added yet.",
@@ -649,7 +649,7 @@ const i18n = {
       major: "専攻",
       mbti: "MBTI",
       personality: "性格",
-      purpose: "マッチング目的"
+      purpose: "興味"
     },
     action: {
       accept: "承認",
@@ -730,7 +730,7 @@ const i18n = {
       major: "専攻",
       region: "居住地",
       mbti: "MBTI",
-      purpose: "マッチング目的",
+      purpose: "興味",
       personality: "性格",
       bioTitle: "自己紹介",
       noBio: "まだ自己紹介がありません。",
@@ -860,7 +860,7 @@ const i18n = {
       major: "专业",
       mbti: "MBTI",
       personality: "性格",
-      purpose: "配对目的"
+      purpose: "兴趣"
     },
     action: {
       accept: "接受",
@@ -941,7 +941,7 @@ const i18n = {
       major: "专业",
       region: "所在地",
       mbti: "MBTI",
-      purpose: "配对目的",
+      purpose: "兴趣",
       personality: "性格",
       bioTitle: "自我介绍",
       noBio: "还没有自我介绍哦",
