@@ -346,7 +346,7 @@ const i18n = {
     },
     nav: {
       home: "Home",
-      exchange: "Program",
+      exchange: "Event",
       match: "Matching",
       chat: "Chat",
       profile: "Profile",
