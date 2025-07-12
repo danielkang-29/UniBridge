@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDBW_188kA6WEX73dw3Kk3tF3rZ9746UKM",
   authDomain: "unibridge-b06bd.firebaseapp.com",
   projectId: "unibridge-b06bd",
-  storageBucket: "unibridge-b06bd.appspot.com",
+  storageBucket: "unibridge-b06bd.firebasestorage.app",
   messagingSenderId: "405623255959",
   appId: "1:405623255959:web:dbd82ea8512b39f9decad2",
   measurementId: "G-0HEQRN2K98"
