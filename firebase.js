@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
 
 // Firebase 초기화
 const firebaseConfig = {
@@ -16,5 +17,6 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 const auth = getAuth(appFirebase);
+const storage = getStorage(appFirebase);
 
-export { db, auth };
+export { db, auth, storage };
