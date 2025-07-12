@@ -1,4 +1,4 @@
-import { db, auth }            from './firebase.js';
+import { db, auth, storage }            from './firebase.js';
 import { doc, setDoc, getDoc, getDocs, addDoc, onSnapshot, query, orderBy, serverTimestamp, collection, where, documentId } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -892,7 +892,7 @@ function renderHome(defaultTab = "home") {
         chatId,
         email,
         nickname: user.nickname || email,
-        photoUrl: user.photoUrl || 'https://via.placeholder.com/45',
+        photoUrl: user.photoUrl || './defaultprofile.png', 
         lastText,
         lastTime,
         lastTimeStr: formatTime(lastTime),
@@ -1004,6 +1004,24 @@ function renderHome(defaultTab = "home") {
       <button id="sendBtn">${t("chat.send")}</button>
     `;
 
+    const backBtn = document.getElementById("backBtn");
+    if (backBtn) backBtn.onclick = () => renderChatTab();
+
+    const callBtn = document.getElementById("callBtn");
+    if (callBtn) {
+      callBtn.onclick = async () => {
+        if (callBtn.dataset.calling === "true") {
+          await endCall(callId);
+          callBtn.textContent = t("chat.call");
+          callBtn.dataset.calling = "false";
+        } else {
+          await startCall(partnerEmail);
+          callBtn.textContent = t("chat.endCall");
+          callBtn.dataset.calling = "true";
+        }
+      };
+    }
+
     const chatBox = document.getElementById("chatBox");
     chatBox.style.cssText = `
       height: 400px;
@@ -1024,10 +1042,40 @@ function renderHome(defaultTab = "home") {
     const chatInput = document.getElementById("chatInput");
     const imageInput = document.getElementById("imageInput");
 
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      console.log("선택된 파일:", file); // 디버깅용
+    });
+
+    const sendBtn = document.getElementById("sendBtn");
+    sendBtn.onclick = async () => {
+      const text = chatInput.value.trim();
+      const file = imageInput.files[0];
+      let imageUrl = null;
+
+      if (file) {
+        const imagePath = `chatImages/${chatId}/${Date.now()}_${file.name}`;
+        const imgRef = ref(storage, imagePath);
+        await uploadBytes(imgRef, file);
+        imageUrl = await getDownloadURL(imgRef);
+      }
+
+      if (!text && !imageUrl) return;
+
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        sender: state.currentUserEmail,
+        text: text || "",
+        imageUrl: imageUrl || "",
+        timestamp: serverTimestamp(),
+        read: false,
+      });
+
+      chatInput.value = "";
+      imageInput.value = "";
+    };
+
     document.getElementById("imageInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
-      const fileNameEl = document.getElementById("fileName");
-      fileNameEl.textContent = file ? file.name : t("chat.noFile");
     });
 
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp"));
@@ -1059,48 +1107,10 @@ function renderHome(defaultTab = "home") {
       });
     });
 
-    document.getElementById("sendBtn").onclick = async () => {
-      const text = chatInput.value;
-      const file = imageInput.files[0];
-      let imageUrl = null;
+    
 
-      if (file) {
-        const imagePath = `chatImages/${chatId}/${Date.now()}_${file.name}`;
-        const imgRef = ref(storage, imagePath);
-        await uploadBytes(imgRef, file);
-        imageUrl = await getDownloadURL(imgRef);
-      }
+    if (backBtn) backBtn.onclick = () => renderChatTab();
 
-      if (!text && !imageUrl) return;
-
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        sender: state.currentUserEmail,
-        text: text || "",
-        imageUrl: imageUrl || "",
-        timestamp: serverTimestamp(),
-        read: false,
-      });
-
-      chatInput.value = "";
-      imageInput.value = "";
-    };
-
-    document.getElementById("backBtn").onclick = () => renderChatTab();
-
-    // 통화 버튼 이벤트
-    document.getElementById("callBtn").onclick = async function toggleCall() {
-      const btn = document.getElementById("callBtn");
-
-      if (btn.dataset.calling === "true") {
-        await endCall(callId);
-        btn.textContent = t("chat.call");
-        btn.dataset.calling = "false";
-      } else {
-        await startCall(partnerEmail);
-        btn.textContent = t("chat.endCall");
-        btn.dataset.calling = "true";
-      }
-    };
   }
 
   function getLocale() {
@@ -1431,10 +1441,10 @@ export function renderCurrentMatchStep() {
 
   // ✅ 아직 질문 단계면 질문부터 표시
   if (state.matchStep < matchQuestions.length) {
-    const q = matchQuestions[state.matchStep];
     content.innerHTML = "";
 
     const title = document.createElement("h2");
+    const q = matchQuestions[state.matchStep];
     title.textContent = t(q.textKey);
     content.appendChild(title);
 
@@ -1602,15 +1612,7 @@ async function handleDecision(accepted) {
 }
 
   const { matchStep, waitingForDecision } = state;
-  const content = document.getElementById("matchContent");
-  if (content) {
-    content.innerHTML = "";
-  }
-
   const q = matchQuestions[matchStep];
-  const title = document.createElement("h2");
-  title.textContent = t(q.textKey);
-  content.appendChild(title);
 
   const opts = document.createElement("div");
   opts.className = "match-options";
@@ -1625,7 +1627,7 @@ async function handleDecision(accepted) {
     };
     opts.appendChild(btn);
   });
-  content.appendChild(opts);
+  document.querySelector("#homeContent")?.appendChild(opts);
 
   if (matchStep > 0) {
     const back = document.createElement("button");
