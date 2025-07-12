@@ -1,15 +1,22 @@
 const CACHE_NAME = "unibridge-cache-v2";
 const urlsToCache = [
   "/", "/index.html", "/main.js", "/auth.js", "/firebase.js",
-  "/manifest.json", "/icon-192.png", "/icon-512.png", "/style.css"
+  "/manifest.json", "/icon-192.png", "/icon-512.png"
 ];
 
 // 설치: 기본 자원 캐싱
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
+    caches.open(CACHE_NAME).then(async cache => {
+      console.log("[SW] 캐시 설치 시작");
+      for (const url of urlsToCache) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.warn(`❗ 캐시 실패: ${url}`, err);
+        }
+      }
       console.log("[SW] 캐시 설치 완료");
-      return cache.addAll(urlsToCache);
     })
   );
 });
