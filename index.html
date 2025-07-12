@@ -29,7 +29,7 @@
       overflow: hidden;
       width: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #f5f5f5;
+      background-color: #f5f5f5 !important;
     }
 
     body {
@@ -46,12 +46,30 @@
       margin: 5vh auto;
       width: 100%;
       max-width: 393px;
-      background: #f5f5f5;
+      background: #f5f5f5 !important;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       box-sizing: border-box;
       min-height: 100vh;
+    }
+
+    #homeContentWrapper,
+    #homeContent {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .no-scroll {
+      overflow-y: hidden;
+    }
+
+    #bottomBar {
+      padding: 16px;
+      background: #f5f5f5 !important;
+      margin-bottom: 50px;
+      border-top: none;
     }
 
     label {
@@ -70,14 +88,14 @@
 
     #languageSelect {
       font-size: 16px;
-      border-radius: 6px;
+      border-radius: 8px;
       border: 1px solid #ccc;
       margin-top: 5px;
     }
 
     button {
       cursor: pointer;
-      border-radius: 6px;
+      border-radius: 8px;
       border: none;
       background-color: var(--primary-color);
       color: #fcfcfc;
@@ -123,7 +141,7 @@
     }
 
     nav {
-      padding-top: env(safe-area-inset-top, 5px);
+      padding-top: env(safe-area-inset-top, 10px);
       display: flex;
       position: sticky;
       top: 0;
@@ -131,7 +149,7 @@
       z-index: 100;
       max-width: none !important; /* 혹시 상속된 max-width 무시 */
       width: 100%;
-      background-color: #f5f5f5;
+      background-color: #f5f5f5 !important;
       border-bottom: 1px solid #ccc;
       align-items: center;       /* ✅ 텍스트 수직 가운데 정렬 */
       height: 40px;              /* ✅ 전체 높이 제한 (선택사항) */
@@ -141,7 +159,7 @@
       flex: 1;
       padding: 0px 0;
       border: none;
-      background: #f5f5f5;
+      background: #f5f5f5 !important;
       cursor: pointer;
       font-size: 16px;
       font-weight: 500;
@@ -154,7 +172,7 @@
       color: black; /* 연한 에메랄드 텍스트 */
       font-weight: 700;
       border-bottom: none; /* 기존 강조선 제거 */
-      background-color: #f5f5f5; /* 배경색 유지 */
+      background-color: #f5f5f5 !important; /* 배경색 유지 */
     }
 
     nav button:hover:not(.active) {
@@ -192,7 +210,7 @@
       font-size: 20px;
       font-weight: bold;
       line-height: 1;
-      border-radius: 6px; /* 살짝 둥근 정사각형 */
+      border-radius: 8px; /* 살짝 둥근 정사각형 */
       padding: 0;
       display: flex;
       align-items: center;
@@ -234,7 +252,7 @@
     }
 
     .calendar th {
-      background-color: #f5f5f5;
+      background-color: #f5f5f5 !important;
       font-weight: 500;
       color: #333;
     }
@@ -251,7 +269,7 @@
     .chat-room {
       flex: 1;
       overflow-y: auto;
-      background: #f5f5f5;
+      background: #f5f5f5 !important;
       padding: 10px;
       max-height: 50vh;
     }
@@ -338,7 +356,7 @@
     .decision-buttons button {
       font-size: 16px;
       min-height: 48px;
-      border-radius: 6px;
+      border-radius: 8px;
       background-color: var(--primary-color);
       color: #fcfcfc;
     }
@@ -394,9 +412,33 @@
     #topNav {
       position: sticky;
       top: 0;
-      background-color: #f5f5f5;
+      background-color: #f5f5f5 !important;
       z-index: 100;
       border-bottom: 1px solid #ccc;
+    }
+
+    .toggleIntroBtn {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      background-color: var(--primary-color);
+      background-color: #ffffff;
+      color: #10b981;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      border: 2px solid #6ee7b7;
+    }
+
+    .toggleIntroBtn:hover {
+      background-color: #ecfdf5;
+    }
+
+    .intro-button-wrapper {
+      margin-bottom: 16px; /* 언어변경 버튼과 동일한 간격 */
     }
 
     .tab-wrapper {
@@ -420,6 +462,16 @@
       font-weight: normal; /* 글씨 굵게 안 함 */
     }
 
+    #homeContent {
+      overflow-y: auto;
+      scrollbar-width: none !important;       /* Firefox */
+      -ms-overflow-style: none !important;    /* IE/Edge */
+    }
+
+    #homeContent::-webkit-scrollbar {
+      display: none !important;               /* Chrome, Safari */
+    }
+
     #fileLabel {
       display: flex;
       align-items: center;
@@ -427,7 +479,7 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background-color: #a7f3d0;
+      background-color: #a7f3d0 !important;
       color: #f5f5f5;
       font-size: 36px;              /* ⬅️ 살짝 줄임 */
       font-weight: bold;
@@ -443,12 +495,29 @@
     }
 
     .plus-icon {
-      color: #f5f5f5;
+      color: #f5f5f5 !important;
       font-size: 36px;
       font-weight: bold;
       line-height: 1;
       transform: translateY(-4px); /* ✅ 글자만 위로 */
       display: inline-block;
+    }
+
+    #chatRoom {
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* 전체 화면 기준 */
+      overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 8px); /* iOS 대응 포함 */
+    }
+
+    #chatBox {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      background-color: #f5f5f5;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
 
     #chatInputRow {
@@ -504,8 +573,28 @@
     }
     body {
       font-family: sans-serif;
-      background-color: #f5f5f5;
+      background-color: #f5f5f5 !important;
       margin: 0;
+    }
+
+    #homeContentWrapper,
+    #homeContent,
+    #bottomFixed {
+      background-color: #f5f5f5 !important;
+    }
+
+    /* 모든 스크롤바 숨기기 (스크롤은 유지됨) */
+    body, #app, #homeContent, #homeContentWrapper, .hide-scroll {
+      scrollbar-width: none;           /* Firefox */
+      -ms-overflow-style: none;        /* IE/Edge */
+    }
+
+    body::-webkit-scrollbar,
+    #app::-webkit-scrollbar,
+    #homeContent::-webkit-scrollbar,
+    #homeContentWrapper::-webkit-scrollbar,
+    .hide-scroll::-webkit-scrollbar {
+      display: none;                   /* Chrome, Safari */
     }
   </style>
 </head>
