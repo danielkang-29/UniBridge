@@ -888,11 +888,13 @@ function renderHome(defaultTab = "home") {
         return m.sender !== state.currentUserEmail && !m.read;
       }).length;
 
+      const isMatched = state.matchedUsers.includes(email); // 서로 수락했는지 확인
+
       summaries.push({
         chatId,
         email,
         nickname: user.nickname || email,
-        photoUrl: user.photoUrl || './defaultprofile.png', 
+        photoUrl: isMatched && user.photoUrl ? user.photoUrl : './defaultprofile.png',
         lastText,
         lastTime,
         lastTimeStr: formatTime(lastTime),
@@ -990,18 +992,31 @@ function renderHome(defaultTab = "home") {
       </div>
       <audio id="remoteAudio" autoplay></audio>
 
-      <div id="chatBox" style="height:300px; overflow-y:scroll; border:1px solid #ccc; padding:10px;"></div>
-
+      <div id="chatBox" style="height: 400px; min-height: 0; overflow-y: scroll; border: 0px solid #ccc; padding: 10px;"></div>
       <input type="file" id="imageInput" accept="image/*" style="display:none;" />
 
       <div id="chatInputRow" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
         <label for="imageInput" id="fileLabel" class="custom-file-label">
           <span class="plus-icon">+</span>
         </label>
-        <input type="text" id="chatInput" placeholder="${t("chat.inputPlaceholder")}" />
-      </div>
 
-      <button id="sendBtn">${t("chat.send")}</button>
+        <input type="text" id="chatInput" placeholder="${t("chat.inputPlaceholder")}" 
+          style="flex: 1; padding: 10px; font-size: 16px; border-radius: 999px; border: 1px solid #ccc;" />
+
+        <button id="sendBtn" style="
+          width: 60px; /* ✅ 고정 가로 너비 */
+          padding: 8px 0;
+          background-color: #34d399;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 15px;
+          cursor: pointer;
+        ">
+          ${t("chat.send")}
+        </button>
+      </div>
+      
     `;
 
     const backBtn = document.getElementById("backBtn");
@@ -1276,20 +1291,38 @@ function renderHome(defaultTab = "home") {
 
       container.innerHTML = `
         <h2>${data.nickname || t("profile.anon")}</h2>
-        <div class="my-info">
-          <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
-          <p><strong>${t("profile.school")}</strong> ${t(u.school ?? '-')}</p>
-          <p><strong>${t("profile.major")}</strong> ${u.major ?? '-'}</p>
-          <p><strong>${t("profile.mbti")}</strong> ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
-          <p><strong>${t("profile.personality")}</strong> ${(u.personality || []).map(p => t(p)).join(', ')}</p>
-          <p><strong>${t("profile.purpose")}</strong> ${(u.purpose || []).map(p => t(p)).join(', ')}</p>
+
+        <!-- 여기에 새로 만든 코드 삽입 -->
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin: 10px 0;">
+          <!-- 왼쪽: 프로필 이미지 (고정 크기) -->
+          <div id="profileImageWrapper" style="width: 135px; flex-shrink: 0;"></div>
+
+          <!-- 오른쪽: 유저 정보 -->
+          <div style="flex: 1; min-width: 0;">
+            <div class="my-info" style="margin-top: 21px;">
+              <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
+              <p><strong>${t("profile.school")}</strong> ${t(u.school ?? '-')}</p>
+              <p><strong>${t("profile.major")}</strong> ${u.major ?? '-'}</p>
+              <p><strong>${t("profile.mbti")}</strong> ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
+              <p><strong>${t("profile.personality")}</strong> ${(u.personality || []).map(p => t(p)).join(', ')}</p>
+              <p><strong>${t("profile.purpose")}</strong> ${(u.purpose || []).map(p => t(p)).join(', ')}</p>
+            </div>
+          </div>
         </div>
 
+        <!-- 자기소개 및 편집 버튼, 액션 버튼은 전체 너비 -->
         <h3>${t("profile.bioTitle")}</h3>
         <div id="bioView" style="white-space:pre-line; margin-bottom:10px;">${bioText()}</div>
         <button id="editBioBtn">✏ ${t("profile.edit")}</button>
 
         <div id="actionButtonRow" style="margin-top: 0px;"></div>
+      `;
+
+      const wrapper = document.getElementById("profileImageWrapper");
+      wrapper.innerHTML = `
+        <img id="previewProfileImage" src="${data.photoUrl || './defaultprofile.png'}"
+          alt="Preview"
+          style="width: 135px; height: 180px; object-fit: cover; border-radius: 10px; border: 2px solid #6ee7b7; margin-top: 21px;" />
       `;
 
       document.getElementById("editBioBtn").onclick = () => {
@@ -1347,6 +1380,14 @@ function renderHome(defaultTab = "home") {
       row.appendChild(logoutBtn);
 
       actionRow.appendChild(row);
+
+      // 보기 모드로 돌아오면 버튼 다시 보이기
+      setTimeout(() => {
+        const langBtn = document.getElementById("langToggleBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (langBtn) langBtn.style.display = "inline-block";
+        if (logoutBtn) logoutBtn.style.display = "inline-block";
+      }, 0);
     }
 
     function enableBioEditMode() {
@@ -1355,36 +1396,115 @@ function renderHome(defaultTab = "home") {
 
       if (!bioView || !editBtn) return;
 
+      const wrapper = document.getElementById("profileImageWrapper");
+      wrapper.innerHTML = `
+        <div style="position: relative; width: 135px; height: 180px; margin-top: 21px;">
+          <label for="profileImageInput" style="display: block; cursor: pointer; width: 100%; height: 100%;">
+            <img id="previewProfileImage" src="${data.photoUrl || './defaultprofile.png'}"
+              alt="Preview"
+              style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;
+                    border: 2px solid #6ee7b7;" />
+            <div style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              border-radius: 10px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              font-size: 56px; /* 더 큼 */
+              font-weight: 900; /* 가장 굵게 */
+              color: rgba(107, 114, 128, 0.6); 
+              text-shadow: 1px 1px 2px white; /* 윤곽 강조 */
+              pointer-events: none;
+            ">＋</div>
+          </label>
+          <input type="file" id="profileImageInput" accept="image/*" style="display: none;" />
+        </div>
+      `;
+
       // bioView 영역을 textarea로 교체
       const currentBio = bioView.textContent.trim();
       bioView.outerHTML = `
         <textarea id="bioInput"
           rows="6"
-          style="
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #42c7bc;
-            border-radius: 12px;
-            font-size: 16px;
-            font-family: inherit;
-            box-sizing: border-box;
-            resize: vertical;
-            background-color: #fff;
-            line-height: 1.5;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            outline: none;
-          "
+          style="width: 100%; padding: 12px 16px; border: 2px solid #42c7bc; border-radius: 12px;
+                font-size: 16px; font-family: inherit; box-sizing: border-box; resize: vertical;
+                background-color: #fff; line-height: 1.5; transition: border-color 0.3s, box-shadow 0.3s;
+                outline: none;"
           onfocus="this.style.borderColor='#42c7bc'; this.style.boxShadow='0 0 0 4px rgba(66, 199, 188, 0.2)'"
-          onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'"
-        >${currentBio}</textarea>
+          onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'">${currentBio}</textarea>
 
-        <br>
-        <button id="saveBioBtn">${t("profile.save")}</button>
-        <button id="cancelBioBtn">${t("profile.cancel")}</button>
+        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
+          <button id="cancelBioBtn" style="
+            flex: 1;
+            background-color: #ffffff;
+            border: 2px solid #6ee7b7;
+            color: #10b981;
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          ">${t("profile.cancel")}</button>
+
+          <button id="saveBioBtn" style="
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            cursor: pointer;
+          ">${t("profile.save")}</button>
+        </div>
       `;
+
+      const input = document.getElementById("profileImageInput");
+      if (input) {
+        input.addEventListener("change", async () => {
+          const file = input.files[0];
+          if (!file) return;
+
+          const storageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
+          await uploadBytes(storageRef, file);
+
+          try {
+            const url = await getDownloadURL(storageRef);
+            const randomUrl = `${url}?v=${Date.now()}`; // 캐시 무력화용 쿼리
+
+            const img = new Image();
+            img.onload = () => {
+              const preview = document.getElementById("previewProfileImage");
+              if (preview) preview.src = randomUrl;
+            };
+            img.onerror = () => {
+              const preview = document.getElementById("previewProfileImage");
+              if (preview) preview.src = "./defaultprofile.png";
+            };
+            img.src = randomUrl;
+
+            // Firestore에 저장할 때는 순수 URL만 사용
+            state.currentUserData.photoUrl = url;
+          } catch (err) {
+            console.error("프로필 이미지 로딩 실패:", err);
+            const preview = document.getElementById("previewProfileImage");
+            if (preview) preview.src = "./defaultprofile.png";
+          }
+        });
+      }
 
       // 버튼 숨기기
       editBtn.style.display = "none";
+
+      // 언어 설정 버튼과 로그아웃 버튼 숨기기
+      const langBtn = document.getElementById("langToggleBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (langBtn) langBtn.style.display = "none";
+      if (logoutBtn) logoutBtn.style.display = "none";
 
       document.getElementById("saveBioBtn").onclick = async () => {
         const newBio = document.getElementById("bioInput").value.trim();
@@ -1395,6 +1515,15 @@ function renderHome(defaultTab = "home") {
           "暂无自我介绍。"
         ];
         state.currentUserData.bio = defaultBios.includes(newBio) ? "" : newBio;
+
+        // ✅ [여기에 프로필 이미지 업로드 추가]
+        const file = document.getElementById("profileImageInput")?.files?.[0];
+        if (file) {
+          const imageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
+          await uploadBytes(imageRef, file); // 안정적 업로드
+          const url = await getDownloadURL(imageRef); // 업로드 후 URL 얻기
+          state.currentUserData.photoUrl = url;
+        }
 
         const docRef = doc(db, "users", state.currentUserEmail);
         await setDoc(docRef, state.currentUserData);
@@ -1657,7 +1786,7 @@ function renderMatchCandidate() {
       <p><strong>${t("major") || "학과"}:</strong> ${candidate.major}</p>
       <p><strong>${t("mbti") || "MBTI"}:</strong> ${candidate.mbti}</p>
       <p><strong>${t("personality") || "성격"}:</strong> ${formatArray(candidate.personality)}</p>
-      <p><strong>${t("purpose") || "매칭 목적"}:</strong> ${formatArray(candidate.purpose)}</p>
+      <p><strong>${t("purpose") || "관심사"}:</strong> ${formatArray(candidate.purpose)}</p>
     </div>
     <div class="introduction" style="display:none;">
       <p>${candidate.bio?.trim() || t("common.noBio")}</p>
