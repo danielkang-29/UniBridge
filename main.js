@@ -1,11 +1,3 @@
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(reg => console.log('✅ Service worker 등록 성공:', reg))
-      .catch(err => console.error('❌ Service worker 등록 실패:', err));
-  });
-}
-
 import { db, auth, storage }            from './firebase.js';
 import { doc, setDoc, getDoc, getDocs, addDoc, onSnapshot, query, orderBy, serverTimestamp, collection, where, documentId } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
@@ -20,75 +12,6 @@ import {
   matchQuestions,
   t,
 } from './auth.js';
-
-// ⚙️ localForage 초기 설정
-localforage.config({
-  name: 'UniBridgeOfflineMessages',
-  storeName: 'messages'
-});
-
-// 💾 메시지 저장
-async function saveToIndexedDB(message) {
-  const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  await localforage.setItem(id, message);
-  console.log("📥 오프라인 메시지 저장됨:", message);
-}
-
-// 📤 모든 오프라인 메시지 불러오기
-async function getPendingMessages() {
-  const messages = [];
-  await localforage.iterate((value, key) => {
-    if (key.startsWith("msg-")) {
-      messages.push({ id: key, ...value });
-    }
-  });
-  console.log("📦 전송 대기 중 메시지:", messages);
-  return messages;
-}
-
-// 🧹 전송 완료된 메시지 삭제
-async function removeSyncedMessage(id) {
-  await localforage.removeItem(id);
-  console.log("🗑️ 동기화 완료 메시지 삭제:", id);
-}
-
-async function syncMessagesFromIndexedDB() {
-  const messages = await getPendingMessages();
-  for (const msg of messages) {
-    if (!msg.chatId) {
-      console.warn("❗ chatId 없음, 건너뜀:", msg);
-      continue;
-    }
-    try {
-      const chatId = msg.chatId;
-      const messageObj = {
-        sender: msg.sender,
-        text: msg.text || "",
-        imageUrl: msg.imageUrl || "",
-        timestamp: serverTimestamp(),
-        read: false,
-      };
-      await addDoc(collection(db, "chats", chatId, "messages"), messageObj);
-      await removeSyncedMessage(msg.id);
-      console.log("✅ Firestore로 메시지 동기화 완료:", messageObj);
-    } catch (err) {
-      console.error("❌ Firestore 전송 실패:", err);
-    }
-  }
-}
-
-async function saveMessageOffline(message) {
-  await saveToIndexedDB(message); // IndexedDB에 저장
-  if ('serviceWorker' in navigator && 'SyncManager' in window) {
-    const registration = await navigator.serviceWorker.ready;
-    try {
-      await registration.sync.register("sync-messages");
-      console.log("📡 백그라운드 동기화 등록됨");
-    } catch (err) {
-      console.error("⚠️ 동기화 등록 실패", err);
-    }
-  }
-} 
 
 function getBioText(bioRaw) {
   const trimmed = bioRaw?.trim();
@@ -129,12 +52,6 @@ onAuthStateChanged(auth, async (user) => {
     } else {
       renderLogin();
     }
-  }
-});
-
-navigator.serviceWorker?.addEventListener("message", event => {
-  if (event.data?.type === "SYNC_MESSAGES") {
-    syncMessagesFromIndexedDB();
   }
 });
 
@@ -433,20 +350,32 @@ const servers = {
 function renderHome(defaultTab = "home") {
   const container = document.getElementById("app");
   container.innerHTML = `
-    <nav id="homeMenu">
-      <button data-tab="home" id="navHomeBtn" class="active"></button>
-      <button data-tab="exchange" id="navExchangeBtn"></button>
-      <button data-tab="matching" id="navMatchingBtn" class="nav-btn">
-        ${t("nav.match")}
-        <span id="matchNewBadge" class="new-badge" style="display: none;">
-          ${t("nav.new")}
-        </span>
-      </button>
-      <button data-tab="chat" id="navChatBtn"></button>
-      <button data-tab="profile" id="navProfileBtn"></button>
-      <div id="tabIndicator"></div>
-    </nav>
-    <div id="homeContent" style="flex: 1; padding: 16px 10px; box-sizing: border-box;">
+    <div id="appLayout" style="display:flex; flex-direction:column; height:100vh; overflow:hidden;">
+
+      <!-- 상단바 -->
+      <nav id="homeMenu">
+        <button data-tab="home" id="navHomeBtn" class="active"></button>
+        <button data-tab="exchange" id="navExchangeBtn"></button>
+        <button data-tab="matching" id="navMatchingBtn" class="nav-btn">
+          ${t("nav.match")}
+          <span id="matchNewBadge" class="new-badge" style="display: none;">
+            ${t("nav.new")}
+          </span>
+        </button>
+        <button data-tab="chat" id="navChatBtn"></button>
+        <button data-tab="profile" id="navProfileBtn"></button>
+        <div id="tabIndicator"></div>
+      </nav>
+
+      <!-- 가운데 콘텐츠 영역 (스크롤 가능) -->
+      <div id="homeContentWrapper" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+        <div id="homeContent" style="padding: 16px 10px; box-sizing: border-box;"></div>
+      </div>
+
+      <!-- 하단 고정 버튼 영역 -->
+      <div id="bottomBar" style="padding: 10px; background: #f5f5f5; border-top: none solid #ccc;">
+        <!-- 여기에 하단 버튼들을 나중에 삽입 -->
+      </div>
     </div>
   `;
 
@@ -470,7 +399,24 @@ function renderHome(defaultTab = "home") {
     homeContent.innerHTML = `
       <h2>${t("home.title")}</h2>
       <p>${t("home.welcome")}</p>
-      <button id="matchBtn">${t("home.findFriend")}</button>
+    `;
+
+    const bottomBar = document.getElementById("bottomBar");
+    bottomBar.innerHTML = `
+      <button id="matchBtn" style="
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        background: #10b981;
+        color: #f5f5f5;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      " onmouseover="this.style.backgroundColor='#0f9f77'"
+        onmouseout="this.style.backgroundColor='#10b981'">
+        ${t("home.findFriend")}
+      </button>
     `;
     document.getElementById("matchBtn").onclick = () => {
       state.matchStep = 0;
@@ -478,11 +424,9 @@ function renderHome(defaultTab = "home") {
       state.currentMatchCandidates = [];
       state.currentMatchIndex = 0;
       state.waitingForDecision = false;
-
-      renderMatchingFlowLayout(); // ✅ nav 없이 질문 흐름만
+      renderMatchingFlowLayout(); // 질문 흐름 전환
     };
   }
-
 
   function renderCalendarTab() {
     const monthNames = [
@@ -701,18 +645,79 @@ function renderHome(defaultTab = "home") {
 
       <div class="introduction" style="display:none;">
         <p>${u.bio && u.bio.trim() ? u.bio : t("common.noIntroduction")}</p>
-        <div style="height: 195px;"></div>
-      </div>
-
-      <button class="toggle-intro-btn" data-email="${email}">${t("common.lookIntroduction")}</button>
-
-      <div class="navigation-buttons" style="display:flex; gap:10px; margin-top:20px;">
-        <button id="prevAccept" ${state.acceptIndex === 0 ? 'disabled' : ''}>${t("common.previous")}</button>
-        <button id="nextAccept" ${state.acceptIndex === candidates.length - 1 ? 'disabled' : ''}>${t("common.next")}</button>
       </div>
     `;
 
     homeContent.innerHTML = html;
+
+    const bottomBar = document.getElementById("bottomBar");
+    if (bottomBar) {
+      bottomBar.innerHTML = `
+        <div style="margin-bottom: 12px;">
+          <button id="toggleIntroBtn" data-email="${email}" class="toggleIntroBtn">
+            ${t("common.lookIntroduction")}
+          </button>
+        </div>
+        <div class="navigation-buttons" style="display:flex; gap:10px; margin-top: 10px;">
+          <button id="prevAccept" ${state.acceptIndex === 0 ? 'disabled' : ''}>${t("common.previous")}</button>
+          <button id="nextAccept" ${state.acceptIndex === candidates.length - 1 ? 'disabled' : ''}>${t("common.next")}</button>
+        </div>
+      `;
+    }
+
+    const toggleBtn = document.getElementById("toggleIntroBtn");
+    const basicInfo = document.querySelector(".basic-info");
+    const intro = document.querySelector(".introduction");
+
+    toggleBtn.addEventListener("click", () => {
+      const wasIntroShowing = intro.style.display === "block";
+
+      // 상태 전환
+      intro.style.display = wasIntroShowing ? "none" : "block";
+      basicInfo.style.display = wasIntroShowing ? "block" : "none";
+      toggleBtn.textContent = wasIntroShowing ? t("common.lookIntroduction") : t("action.backToProfile");
+
+      const prevBtn = document.getElementById("prevAccept");
+      const nextBtn = document.getElementById("nextAccept");
+
+      if (wasIntroShowing) {
+        // 돌아가기 눌렀을 때 → 인덱스 기준으로 복구
+        const isFirst = state.acceptIndex === 0;
+        const isLast = state.acceptIndex === state.acceptOrMatched.length - 1;
+
+        if (prevBtn) {
+          prevBtn.style.opacity = isFirst ? "0.4" : "";
+          prevBtn.style.pointerEvents = isFirst ? "none" : "";
+        }
+
+        if (nextBtn) {
+          nextBtn.style.opacity = isLast ? "0.4" : "";
+          nextBtn.style.pointerEvents = isLast ? "none" : "";
+        }
+      } else {
+        // 자기소개 보기 눌렀을 때 → 버튼 잠금
+        [prevBtn, nextBtn].forEach(btn => {
+          if (btn) {
+            btn.style.opacity = "0.4";
+            btn.style.pointerEvents = "none";
+          }
+        });
+      }
+    });
+
+    document.getElementById("prevAccept").onclick = () => {
+      if (state.acceptIndex > 0) {
+        state.acceptIndex--;
+        renderAcceptedCandidate();
+      }
+    };
+
+    document.getElementById("nextAccept").onclick = () => {
+      if (state.acceptIndex < candidates.length - 1) {
+        state.acceptIndex++;
+        renderAcceptedCandidate();
+      }
+    };
 
     const prevBtn = document.getElementById("prevAccept");
     const nextBtn = document.getElementById("nextAccept");
@@ -724,6 +729,7 @@ function renderHome(defaultTab = "home") {
       prevBtn.style.opacity = isFirst ? "0.4" : "";
       prevBtn.style.pointerEvents = isFirst ? "none" : "";
       prevBtn.onclick = () => {
+        prevBtn.blur(); // ✅
         if (!isFirst) {
           state.acceptIndex--;
           renderAcceptedCandidate();
@@ -735,54 +741,12 @@ function renderHome(defaultTab = "home") {
       nextBtn.style.opacity = isLast ? "0.4" : "";
       nextBtn.style.pointerEvents = isLast ? "none" : "";
       nextBtn.onclick = () => {
+        nextBtn.blur(); // ✅
         if (!isLast) {
           state.acceptIndex++;
           renderAcceptedCandidate();
         }
       };
-    }
-
-    const btn = document.querySelector(".toggle-intro-btn");
-    if (btn) {
-      btn.addEventListener("click", () => {
-        const container = btn.parentElement;
-        const basicInfo = container.querySelector(".basic-info");
-        const intro = container.querySelector(".introduction");
-        const navBtns = container.querySelector(".navigation-buttons");
-
-        const showingIntro = intro.style.display === "block";
-        intro.style.display = showingIntro ? "none" : "block";
-        basicInfo.style.display = showingIntro ? "block" : "none";
-        btn.textContent = showingIntro ? t("common.lookIntroduction") : t("action.backToProfile");
-
-        if (navBtns) {
-          const prevBtn = navBtns.querySelector("#prevAccept");
-          const nextBtn = navBtns.querySelector("#nextAccept");
-
-          if (!showingIntro) {
-            [prevBtn, nextBtn].forEach(btn => {
-              btn.style.opacity = "0.4";
-              btn.style.pointerEvents = "none";
-            });
-          } else {
-            if (state.acceptIndex === 0) {
-              prevBtn.style.opacity = "0.4";
-              prevBtn.style.pointerEvents = "none";
-            } else {
-              prevBtn.style.opacity = "";
-              prevBtn.style.pointerEvents = "";
-            }
-
-            if (state.acceptIndex === candidates.length - 1) {
-              nextBtn.style.opacity = "0.4";
-              nextBtn.style.pointerEvents = "none";
-            } else {
-              nextBtn.style.opacity = "";
-              nextBtn.style.pointerEvents = "";
-            }
-          }
-        }
-      });
     }
 
     const chatBtn = document.getElementById("goToChatBtn");
@@ -846,6 +810,11 @@ function renderHome(defaultTab = "home") {
 
   // 탭 활성화 함수
   function setActiveTab(tabName, startMatchingFlow = false, callbackFn) {
+    // ✅ 하단 버튼 초기화 먼저!
+    const bottomBar = document.getElementById("bottomBar");
+    if (bottomBar) bottomBar.innerHTML = "";
+
+    // ✅ 탭 active 상태 정리
     const tabs = ["home", "exchange", "matching", "chat", "profile"];
     const index = tabs.indexOf(tabName);
     if (index !== -1) moveTabIndicator(index);
@@ -853,10 +822,10 @@ function renderHome(defaultTab = "home") {
       const btn = document.getElementById(`nav${capitalize(t)}Btn`);
       if (btn) btn.classList.remove("active");
     });
-
     const activeBtn = document.getElementById(`nav${capitalize(tabName)}Btn`);
     if (activeBtn) activeBtn.classList.add("active");
 
+    // ✅ 탭별 렌더링
     switch (tabName) {
       case "home":
         renderHomeTab();
@@ -868,7 +837,7 @@ function renderHome(defaultTab = "home") {
         renderMatchingTab(startMatchingFlow);
         break;
       case "chat":
-        renderChatTab(callbackFn); // ✅ 콜백 전달
+        renderChatTab(callbackFn);
         break;
       case "profile":
         renderProfileTab();
@@ -1052,7 +1021,7 @@ function renderHome(defaultTab = "home") {
 
     const backNav = renderChatBackButton();
     const container = document.getElementById("app");
-    container.insertBefore(backNav, homeContent);
+    container.prepend(backNav);
 
     // ✅ 이제 안전하게 사용 가능
     const name = document.createElement("span");
@@ -1075,10 +1044,10 @@ function renderHome(defaultTab = "home") {
       </div>
       <audio id="remoteAudio" autoplay></audio>
 
-      <div id="chatBox" style="height: 400px; min-height: 0; overflow-y: scroll; border: 0px solid #ccc; padding: 10px;"></div>
+      <div id="chatBox" style="height: 100vh; min-height: 0; overflow-y: scroll; border: 0px solid #ccc; padding: 10px;"></div>
       <input type="file" id="imageInput" accept="image/*" style="display:none;" />
 
-      <div id="chatInputRow" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+      <div id="chatInputRow" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 0;">
         <label for="imageInput" id="fileLabel" class="custom-file-label">
           <span class="plus-icon">+</span>
         </label>
@@ -1121,16 +1090,17 @@ function renderHome(defaultTab = "home") {
     }
 
     const chatBox = document.getElementById("chatBox");
-    chatBox.style.cssText = `
-      height: 400px;
-      overflow-y: scroll;
-      padding: 10px;
-      border: none;
-      background-color: #f5f5f5;
+      chatBox.style.cssText = `
+        height: 400px;
+        overflow-y: scroll;
+        padding: 10px;
+        margin-bottom: 0;
+        border: none;
+        background-color: #f5f5f5;
 
-      scrollbar-width: none;       /* Firefox용 */
-      -ms-overflow-style: none;    /* IE/Edge용 */
-    `;
+        scrollbar-width: none;       /* Firefox용 */
+        -ms-overflow-style: none;    /* IE/Edge용 */
+      `;
 
     chatBox.style.overflowY = "scroll";
 
@@ -1160,25 +1130,13 @@ function renderHome(defaultTab = "home") {
 
       if (!text && !imageUrl) return;
 
-      const messageObj = {
+      await addDoc(collection(db, "chats", chatId, "messages"), {
         sender: state.currentUserEmail,
         text: text || "",
         imageUrl: imageUrl || "",
-        timestamp: new Date(), // 오프라인 시에도 시간 기록
+        timestamp: serverTimestamp(),
         read: false,
-        chatId,
-      };
-
-      if (navigator.onLine) {
-        // ✅ 온라인이면 바로 전송
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          ...messageObj,
-          timestamp: serverTimestamp(), // 온라인이면 Firestore 서버 시간 사용
-        });
-      } else {
-        // ❌ 오프라인이면 IndexedDB 저장 및 sync 등록
-        await saveMessageOffline(messageObj);
-      }
+      });
 
       chatInput.value = "";
       imageInput.value = "";
@@ -1283,6 +1241,22 @@ function renderHome(defaultTab = "home") {
     };
   }
 
+  function adjustScrollBehaviorByBio() {
+    const wrapper = document.getElementById("homeContentWrapper");
+    const bioText = document.getElementById("bioText");
+
+    if (!wrapper || !bioText) return;
+
+    const lineHeight = parseFloat(getComputedStyle(bioText).lineHeight) || 24;
+    const lines = bioText.scrollHeight / lineHeight;
+
+    if (lines <= 1.1) {
+      wrapper.style.setProperty("overflow-y", "hidden", "important");
+    } else {
+      wrapper.style.setProperty("overflow-y", "auto", "important");
+    }
+  }
+
   function renderProfileTab() {
     const container = document.getElementById("homeContent");
     const data = state.currentUserData;
@@ -1373,26 +1347,36 @@ function renderHome(defaultTab = "home") {
           backBtn.style.backgroundColor = "#10b981";
         });
       }
+      
     }
 
     function renderViewMode() {
-      const u = data;
+      exitEditMode();
 
-      let rawBio = typeof u.bio === "string" ? u.bio.trim() : "";
+      const u = data;
+      const container = document.getElementById("homeContent");
+
+      if (container) {
+        container.style.backgroundColor = "#f5f5f5";
+        container.style.maxHeight = "calc(100vh - 160px)";
+        container.style.minHeight = "300px";
+        container.style.overflowY = "auto";
+        container.style.scrollbarWidth = "none"; // Firefox
+        container.style.msOverflowStyle = "none"; // IE/Edge
+        container.style.overflow = "hidden auto"; // Chrome, Safari
+      }
+
       let bioText = () => {
         let rawBio = typeof u.bio === "string" ? u.bio.trim() : "";
         return rawBio ? rawBio : t("common.noBio");
       };
 
+      container.style.padding = "12px 10px";
+
       container.innerHTML = `
-        <h2>${data.nickname || t("profile.anon")}</h2>
-
-        <!-- 여기에 새로 만든 코드 삽입 -->
+        <h2>${u.nickname || t("profile.anon")}</h2>
         <div style="display: flex; gap: 20px; align-items: flex-start; margin: 10px 0;">
-          <!-- 왼쪽: 프로필 이미지 (고정 크기) -->
           <div id="profileImageWrapper" style="width: 135px; flex-shrink: 0;"></div>
-
-          <!-- 오른쪽: 유저 정보 -->
           <div style="flex: 1; min-width: 0;">
             <div class="my-info" style="margin-top: 21px;">
               <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
@@ -1405,89 +1389,108 @@ function renderHome(defaultTab = "home") {
           </div>
         </div>
 
-        <!-- 자기소개 및 편집 버튼, 액션 버튼은 전체 너비 -->
         <h3>${t("profile.bioTitle")}</h3>
-        <div id="bioView" style="white-space:pre-line; margin-bottom:10px;">${bioText()}</div>
-        <button id="editBioBtn">✏ ${t("profile.edit")}</button>
+        <div id="bioText" style="white-space:pre-line; margin-bottom:10px; line-height: 24px;">${bioText()}</div>
 
-        <div id="actionButtonRow" style="margin-top: 0px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+          <button id="editBioBtn" style="
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          " onmouseover="this.style.backgroundColor='#0f9f77'"
+            onmouseout="this.style.backgroundColor='#10b981'">
+            ✏ ${t("profile.edit")}
+          </button>
+        </div>
       `;
 
+      setTimeout(() => {
+        adjustScrollBehaviorByBio();
+      }, 0);
+
+      // 프로필 이미지 표시
       const wrapper = document.getElementById("profileImageWrapper");
       wrapper.innerHTML = `
-        <img id="previewProfileImage" src="${data.photoUrl || './defaultprofile.png'}"
+        <img id="previewProfileImage" src="${u.photoUrl || './defaultprofile.png'}"
           alt="Preview"
           style="width: 135px; height: 180px; object-fit: cover; border-radius: 10px; border: 2px solid #6ee7b7; margin-top: 21px;" />
       `;
 
+      // 수정 버튼 동작 연결
       document.getElementById("editBioBtn").onclick = () => {
         isEditing = true;
         enableBioEditMode();
       };
 
-      const actionRow = document.getElementById("actionButtonRow");
+      // ✅ 하단바: 언어변경, 로그아웃 버튼
+      const bottomBar = document.getElementById("bottomBar");
+      if (bottomBar) {
+        bottomBar.style.backgroundColor = "#f5f5f5";
+        bottomBar.style.padding = "0";
+        bottomBar.innerHTML = `
+  <div style="display: flex; gap: 10px; justify-content: center; padding: 10px; box-sizing: border-box;">
+    <button id="langToggleBtn" style="
+      flex: 1;
+      background-color: #ffffff;
+      border: 2px solid #6ee7b7;
+      color: #10b981;
+      padding: 12px 16px;
+      font-size: 16px;
+      line-height: 1;
+      box-sizing: border-box;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    " onmouseover="this.style.backgroundColor='#ecfdf5'"
+      onmouseout="this.style.backgroundColor='#ffffff'">🌐 ${t("profile.changeLang")}</button>
 
-      // --- 언어 변경 버튼 ---
-      const langToggleBtn = document.createElement("button");
-      langToggleBtn.id = "langToggleBtn";
-      langToggleBtn.textContent = `🌐 ${t("profile.changeLang")}`;
-      langToggleBtn.onclick = () => renderLanguageSettingView();
+    <button id="logoutBtn" style="
+      flex: 1;
+      background-color: #ffffff;
+      border: 2px solid #6ee7b7;
+      color: #10b981;
+      padding: 12px 16px;
+      font-size: 16px;
+      line-height: 1;
+      box-sizing: border-box;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    " onmouseover="this.style.backgroundColor='#ecfdf5'"
+      onmouseout="this.style.backgroundColor='#ffffff'">${t("common.logout")}</button>
+  </div>
+`;
 
-      // --- 로그아웃 버튼 ---
-      const logoutBtn = document.createElement("button");
-      logoutBtn.id = "logoutBtn";
-      logoutBtn.textContent = t("common.logout") || "로그아웃";
-      logoutBtn.onclick = async () => {
-        const { auth } = await import('./firebase.js');
-        const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
-        await signOut(auth);
-        state.currentUserEmail = null;
-        state.currentUserData = null;
-        renderLogin();
-      };
-
-      // --- 스타일 일괄 적용 ---
-      [langToggleBtn, logoutBtn].forEach(btn => {
-        btn.style.backgroundColor = "#ffffff";
-        btn.style.border = "2px solid #6ee7b7";
-        btn.style.color = "#10b981";
-        btn.style.padding = "12px 16px";
-        btn.style.fontSize = "16px";
-        btn.style.borderRadius = "8px";
-        btn.style.cursor = "pointer";
-        btn.style.transition = "background-color 0.2s";
-
-        btn.addEventListener("mouseover", () => {
-          btn.style.backgroundColor = "#ecfdf5";
-        });
-        btn.addEventListener("mouseout", () => {
-          btn.style.backgroundColor = "#ffffff";
-        });
-      });
-
-      // --- 수평 정렬된 버튼 컨테이너 ---
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.gap = "10px";
-      row.style.marginTop = "10px";
-
-      row.appendChild(langToggleBtn);
-      row.appendChild(logoutBtn);
-
-      actionRow.appendChild(row);
-
-      // 보기 모드로 돌아오면 버튼 다시 보이기
-      setTimeout(() => {
-        const langBtn = document.getElementById("langToggleBtn");
-        const logoutBtn = document.getElementById("logoutBtn");
-        if (langBtn) langBtn.style.display = "inline-block";
-        if (logoutBtn) logoutBtn.style.display = "inline-block";
-      }, 0);
+        document.getElementById("langToggleBtn").onclick = () => renderLanguageSettingView();
+        document.getElementById("logoutBtn").onclick = async () => {
+          const { auth } = await import('./firebase.js');
+          const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
+          await signOut(auth);
+          state.currentUserEmail = null;
+          state.currentUserData = null;
+          renderLogin();
+        };
+      }
     }
 
+
     function enableBioEditMode() {
+      enterEditMode();
+
+      const bottomBar = document.getElementById("bottomBar");
+      if (bottomBar) bottomBar.innerHTML = "";
+
       const bioView = document.getElementById("bioView");
       const editBtn = document.getElementById("editBioBtn");
+      if (editBtn) {
+        editBtn.style.margin = "0";
+      }
 
       if (!bioView || !editBtn) return;
 
@@ -1631,6 +1634,7 @@ function renderHome(defaultTab = "home") {
     }
 
     renderViewMode();
+    setTimeout(adjustScrollBehaviorByBio, 0);
   }
 }
 
@@ -2296,6 +2300,14 @@ function closeOverlayView() {
   overlay.innerHTML = "";
 }
 
+// 화면 스크롤 제어 함수
+function enterEditMode() {
+  document.body.style.overflow = 'auto'; // ✅ 스크롤 허용
+}
+
+function exitEditMode() {
+  document.body.style.overflow = 'hidden'; // ✅ 스크롤 막기
+}
 
 // DOM 준비되면 로그인 화면부터 띄우기
 document.addEventListener('DOMContentLoaded', () => {});
