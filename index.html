@@ -51,7 +51,6 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      height: 100%;
       margin: 5vh auto;
       width: 100%;
       max-width: 393px;
@@ -262,7 +261,6 @@
       background: #f4f4f4;
       padding: 10px;
       max-height: 50vh;
-      margin-bottom: 70px;
     }
 
     .chat-bubble {
@@ -537,25 +535,6 @@
 
       document.addEventListener("DOMContentLoaded", () => {
       });
-    </script>
-    <script>
-      function adjustForIOSKeyboard() {
-        const inputWrapper = document.querySelector('.chat-input-wrapper');
-        if (!inputWrapper) return;
-
-        const baseHeight = window.innerHeight;
-
-        window.addEventListener('resize', () => {
-          const currentHeight = window.innerHeight;
-          if (currentHeight < baseHeight) {
-            inputWrapper.style.position = 'absolute';
-          } else {
-            inputWrapper.style.position = 'fixed';
-          }
-        });
-      }
-
-      window.addEventListener('DOMContentLoaded', adjustForIOSKeyboard);
     </script>
   </body>
 </html>
