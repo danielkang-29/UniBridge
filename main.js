@@ -1,3 +1,11 @@
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('✅ Service worker 등록 성공:', reg))
+      .catch(err => console.error('❌ Service worker 등록 실패:', err));
+  });
+}
+
 import { db, auth, storage }            from './firebase.js';
 import { doc, setDoc, getDoc, getDocs, addDoc, onSnapshot, query, orderBy, serverTimestamp, collection, where, documentId } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
@@ -12,6 +20,75 @@ import {
   matchQuestions,
   t,
 } from './auth.js';
+
+// ⚙️ localForage 초기 설정
+localforage.config({
+  name: 'UniBridgeOfflineMessages',
+  storeName: 'messages'
+});
+
+// 💾 메시지 저장
+async function saveToIndexedDB(message) {
+  const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await localforage.setItem(id, message);
+  console.log("📥 오프라인 메시지 저장됨:", message);
+}
+
+// 📤 모든 오프라인 메시지 불러오기
+async function getPendingMessages() {
+  const messages = [];
+  await localforage.iterate((value, key) => {
+    if (key.startsWith("msg-")) {
+      messages.push({ id: key, ...value });
+    }
+  });
+  console.log("📦 전송 대기 중 메시지:", messages);
+  return messages;
+}
+
+// 🧹 전송 완료된 메시지 삭제
+async function removeSyncedMessage(id) {
+  await localforage.removeItem(id);
+  console.log("🗑️ 동기화 완료 메시지 삭제:", id);
+}
+
+async function syncMessagesFromIndexedDB() {
+  const messages = await getPendingMessages();
+  for (const msg of messages) {
+    if (!msg.chatId) {
+      console.warn("❗ chatId 없음, 건너뜀:", msg);
+      continue;
+    }
+    try {
+      const chatId = msg.chatId;
+      const messageObj = {
+        sender: msg.sender,
+        text: msg.text || "",
+        imageUrl: msg.imageUrl || "",
+        timestamp: serverTimestamp(),
+        read: false,
+      };
+      await addDoc(collection(db, "chats", chatId, "messages"), messageObj);
+      await removeSyncedMessage(msg.id);
+      console.log("✅ Firestore로 메시지 동기화 완료:", messageObj);
+    } catch (err) {
+      console.error("❌ Firestore 전송 실패:", err);
+    }
+  }
+}
+
+async function saveMessageOffline(message) {
+  await saveToIndexedDB(message); // IndexedDB에 저장
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    const registration = await navigator.serviceWorker.ready;
+    try {
+      await registration.sync.register("sync-messages");
+      console.log("📡 백그라운드 동기화 등록됨");
+    } catch (err) {
+      console.error("⚠️ 동기화 등록 실패", err);
+    }
+  }
+} 
 
 function getBioText(bioRaw) {
   const trimmed = bioRaw?.trim();
@@ -52,6 +129,12 @@ onAuthStateChanged(auth, async (user) => {
     } else {
       renderLogin();
     }
+  }
+});
+
+navigator.serviceWorker?.addEventListener("message", event => {
+  if (event.data?.type === "SYNC_MESSAGES") {
+    syncMessagesFromIndexedDB();
   }
 });
 
@@ -1077,13 +1160,25 @@ function renderHome(defaultTab = "home") {
 
       if (!text && !imageUrl) return;
 
-      await addDoc(collection(db, "chats", chatId, "messages"), {
+      const messageObj = {
         sender: state.currentUserEmail,
         text: text || "",
         imageUrl: imageUrl || "",
-        timestamp: serverTimestamp(),
+        timestamp: new Date(), // 오프라인 시에도 시간 기록
         read: false,
-      });
+        chatId,
+      };
+
+      if (navigator.onLine) {
+        // ✅ 온라인이면 바로 전송
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          ...messageObj,
+          timestamp: serverTimestamp(), // 온라인이면 Firestore 서버 시간 사용
+        });
+      } else {
+        // ❌ 오프라인이면 IndexedDB 저장 및 sync 등록
+        await saveMessageOffline(messageObj);
+      }
 
       chatInput.value = "";
       imageInput.value = "";
