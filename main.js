@@ -13,12 +13,6 @@ import {
   t,
 } from './auth.js';
 
-function getBioText(bioRaw) {
-  const trimmed = bioRaw?.trim();
-  if (!trimmed) return t("common.noBio");
-  return trimmed;
-}
-
 // 최상단에 onAuthStateChanged 유지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1241,22 +1235,6 @@ function renderHome(defaultTab = "home") {
     };
   }
 
-  function adjustScrollBehaviorByBio() {
-    const wrapper = document.getElementById("homeContentWrapper");
-    const bioText = document.getElementById("bioText");
-
-    if (!wrapper || !bioText) return;
-
-    const lineHeight = parseFloat(getComputedStyle(bioText).lineHeight) || 24;
-    const lines = bioText.scrollHeight / lineHeight;
-
-    if (lines <= 1.1) {
-      wrapper.style.setProperty("overflow-y", "hidden", "important");
-    } else {
-      wrapper.style.setProperty("overflow-y", "auto", "important");
-    }
-  }
-
   function renderProfileTab() {
     const container = document.getElementById("homeContent");
     const data = state.currentUserData;
@@ -1390,7 +1368,7 @@ function renderHome(defaultTab = "home") {
         </div>
 
         <h3>${t("profile.bioTitle")}</h3>
-        <div id="bioText" style="white-space:pre-line; margin-bottom:10px; line-height: 24px;">${bioText()}</div>
+        <div id="bioText" style="white-space:pre-line;">${bioText()}</div>
 
         <div style="text-align: center; margin: 20px 0;">
           <button id="editBioBtn" style="
@@ -1410,9 +1388,7 @@ function renderHome(defaultTab = "home") {
         </div>
       `;
 
-      setTimeout(() => {
-        adjustScrollBehaviorByBio();
-      }, 0);
+      setTimeout(() => {}, 0);
 
       // 프로필 이미지 표시
       const wrapper = document.getElementById("profileImageWrapper");
@@ -1424,217 +1400,184 @@ function renderHome(defaultTab = "home") {
 
       // 수정 버튼 동작 연결
       document.getElementById("editBioBtn").onclick = () => {
-        isEditing = true;
-        enableBioEditMode();
+          isEditing = true;
+          enableBioEditMode();
       };
-
-      // ✅ 하단바: 언어변경, 로그아웃 버튼
-      const bottomBar = document.getElementById("bottomBar");
-      if (bottomBar) {
-        bottomBar.style.backgroundColor = "#f5f5f5";
-        bottomBar.style.padding = "0";
-        bottomBar.innerHTML = `
-  <div style="display: flex; gap: 10px; justify-content: center; padding: 10px; box-sizing: border-box;">
-    <button id="langToggleBtn" style="
-      flex: 1;
-      background-color: #ffffff;
-      border: 2px solid #6ee7b7;
-      color: #10b981;
-      padding: 12px 16px;
-      font-size: 16px;
-      line-height: 1;
-      box-sizing: border-box;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    " onmouseover="this.style.backgroundColor='#ecfdf5'"
-      onmouseout="this.style.backgroundColor='#ffffff'">🌐 ${t("profile.changeLang")}</button>
-
-    <button id="logoutBtn" style="
-      flex: 1;
-      background-color: #ffffff;
-      border: 2px solid #6ee7b7;
-      color: #10b981;
-      padding: 12px 16px;
-      font-size: 16px;
-      line-height: 1;
-      box-sizing: border-box;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    " onmouseover="this.style.backgroundColor='#ecfdf5'"
-      onmouseout="this.style.backgroundColor='#ffffff'">${t("common.logout")}</button>
-  </div>
-`;
-
-        document.getElementById("langToggleBtn").onclick = () => renderLanguageSettingView();
-        document.getElementById("logoutBtn").onclick = async () => {
-          const { auth } = await import('./firebase.js');
-          const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
-          await signOut(auth);
-          state.currentUserEmail = null;
-          state.currentUserData = null;
-          renderLogin();
-        };
-      }
     }
 
 
     function enableBioEditMode() {
-      enterEditMode();
+        enterEditMode();
 
-      const bottomBar = document.getElementById("bottomBar");
-      if (bottomBar) bottomBar.innerHTML = "";
+        // 하단바 숨기기
+        const bottomBar = document.getElementById("bottomBar");
+        if (bottomBar) bottomBar.style.display = "none"; // 나의 정보 화면에서 하단바 숨기기
 
-      const bioView = document.getElementById("bioView");
-      const editBtn = document.getElementById("editBioBtn");
-      if (editBtn) {
-        editBtn.style.margin = "0";
-      }
+        const bioView = document.getElementById("bioText");
+        const editBtn = document.getElementById("editBioBtn");
 
-      if (!bioView || !editBtn) return;
+        if (!bioView || !editBtn) return;
 
-      const wrapper = document.getElementById("profileImageWrapper");
-      wrapper.innerHTML = `
-        <div style="position: relative; width: 135px; height: 180px; margin-top: 21px;">
-          <label for="profileImageInput" style="display: block; cursor: pointer; width: 100%; height: 100%;">
-            <img id="previewProfileImage" src="${data.photoUrl || './defaultprofile.png'}"
-              alt="Preview"
-              style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;
-                    border: 2px solid #6ee7b7;" />
-            <div style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              border-radius: 10px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              font-size: 56px; /* 더 큼 */
-              font-weight: 900; /* 가장 굵게 */
-              color: rgba(107, 114, 128, 0.6); 
-              text-shadow: 1px 1px 2px white; /* 윤곽 강조 */
-              pointer-events: none;
-            ">＋</div>
-          </label>
-          <input type="file" id="profileImageInput" accept="image/*" style="display: none;" />
-        </div>
-      `;
+        const wrapper = document.getElementById("profileImageWrapper");
+        wrapper.innerHTML = `
+            <div style="position: relative; width: 135px; height: 180px; margin-top: 21px;">
+              <label for="profileImageInput" style="display: block; cursor: pointer; width: 100%; height: 100%;">
+                <img id="previewProfileImage" src="${data.photoUrl || './defaultprofile.png'}"
+                  alt="Preview"
+                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;
+                        border: 2px solid #6ee7b7;" />
+                <div style="
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  border-radius: 10px;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  font-size: 56px;
+                  font-weight: 900;
+                  color: rgba(107, 114, 128, 0.6); 
+                  text-shadow: 1px 1px 2px white;
+                  pointer-events: none;
+                ">＋</div>
+              </label>
+              <input type="file" id="profileImageInput" accept="image/*" style="display: none;" />
+            </div>
+        `;
 
-      // bioView 영역을 textarea로 교체
-      const currentBio = bioView.textContent.trim();
-      bioView.outerHTML = `
-        <textarea id="bioInput"
-          rows="6"
-          style="width: 100%; padding: 12px 16px; border: 2px solid #42c7bc; border-radius: 12px;
-                font-size: 16px; font-family: inherit; box-sizing: border-box; resize: vertical;
-                background-color: #fff; line-height: 1.5; transition: border-color 0.3s, box-shadow 0.3s;
-                outline: none;"
-          onfocus="this.style.borderColor='#42c7bc'; this.style.boxShadow='0 0 0 4px rgba(66, 199, 188, 0.2)'"
-          onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'">${currentBio}</textarea>
+        // bioView 영역을 textarea로 교체
+        const currentBio = bioView.textContent.trim();
+        bioView.outerHTML = `
+            <textarea id="bioInput"
+              rows="6"
+              style="width: 100%; padding: 16px; border: 2px solid #42c7bc; border-radius: 12px;
+                    font-size: 16px; font-family: inherit; box-sizing: border-box; resize: vertical;
+                    background-color: #fff; line-height: 1.6; transition: border-color 0.3s, box-shadow 0.3s;
+                    outline: none; height: 180px; max-width: 100%;"
+              onfocus="this.style.borderColor='#42c7bc'; this.style.boxShadow='0 0 0 4px rgba(66, 199, 188, 0.2)'"
+              onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'">${currentBio}</textarea>
 
-        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
-          <button id="cancelBioBtn" style="
-            flex: 1;
-            background-color: #ffffff;
-            border: 2px solid #6ee7b7;
-            color: #10b981;
-            padding: 12px 16px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-          ">${t("profile.cancel")}</button>
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
+              <button id="saveBioBtn" style="
+                flex: 1;
+                padding: 12px 16px;
+                font-size: 16px;
+                border-radius: 8px;
+                background-color: #10b981;
+                color: white;
+                border: none;
+                cursor: pointer;
+              ">${t("profile.save")}</button>
+            </div>
+        `;
 
-          <button id="saveBioBtn" style="
-            flex: 1;
-            padding: 12px 16px;
-            font-size: 16px;
-            border-radius: 8px;
-            background-color: #10b981;
-            color: white;
-            border: none;
-            cursor: pointer;
-          ">${t("profile.save")}</button>
-        </div>
-      `;
+        const input = document.getElementById("profileImageInput");
+        if (input) {
+            input.addEventListener("change", async () => {
+                const file = input.files[0];
+                if (!file) return;
 
-      const input = document.getElementById("profileImageInput");
-      if (input) {
-        input.addEventListener("change", async () => {
-          const file = input.files[0];
-          if (!file) return;
+                const storageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
+                await uploadBytes(storageRef, file);
 
-          const storageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
-          await uploadBytes(storageRef, file);
+                try {
+                    const url = await getDownloadURL(storageRef);
+                    const randomUrl = `${url}?v=${Date.now()}`; // 캐시 무력화용 쿼리
 
-          try {
-            const url = await getDownloadURL(storageRef);
-            const randomUrl = `${url}?v=${Date.now()}`; // 캐시 무력화용 쿼리
+                    const img = new Image();
+                    img.onload = () => {
+                        const preview = document.getElementById("previewProfileImage");
+                        if (preview) preview.src = randomUrl;
+                    };
+                    img.onerror = () => {
+                        const preview = document.getElementById("previewProfileImage");
+                        if (preview) preview.src = "./defaultprofile.png";
+                    };
+                    img.src = randomUrl;
 
-            const img = new Image();
-            img.onload = () => {
-              const preview = document.getElementById("previewProfileImage");
-              if (preview) preview.src = randomUrl;
-            };
-            img.onerror = () => {
-              const preview = document.getElementById("previewProfileImage");
-              if (preview) preview.src = "./defaultprofile.png";
-            };
-            img.src = randomUrl;
-
-            // Firestore에 저장할 때는 순수 URL만 사용
-            state.currentUserData.photoUrl = url;
-          } catch (err) {
-            console.error("프로필 이미지 로딩 실패:", err);
-            const preview = document.getElementById("previewProfileImage");
-            if (preview) preview.src = "./defaultprofile.png";
-          }
-        });
-      }
-
-      // 버튼 숨기기
-      editBtn.style.display = "none";
-
-      // 언어 설정 버튼과 로그아웃 버튼 숨기기
-      const langBtn = document.getElementById("langToggleBtn");
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (langBtn) langBtn.style.display = "none";
-      if (logoutBtn) logoutBtn.style.display = "none";
-
-      document.getElementById("saveBioBtn").onclick = async () => {
-        const newBio = document.getElementById("bioInput").value.trim();
-        const defaultBios = [
-          "자기소개가 없습니다.",
-          "No introduction.",
-          "自己紹介がありません。",
-          "暂无自我介绍。"
-        ];
-        state.currentUserData.bio = defaultBios.includes(newBio) ? "" : newBio;
-
-        // ✅ [여기에 프로필 이미지 업로드 추가]
-        const file = document.getElementById("profileImageInput")?.files?.[0];
-        if (file) {
-          const imageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
-          await uploadBytes(imageRef, file); // 안정적 업로드
-          const url = await getDownloadURL(imageRef); // 업로드 후 URL 얻기
-          state.currentUserData.photoUrl = url;
+                    // Firestore에 저장할 때는 순수 URL만 사용
+                    state.currentUserData.photoUrl = url;
+                } catch (err) {
+                    console.error("프로필 이미지 로딩 실패:", err);
+                    const preview = document.getElementById("previewProfileImage");
+                    if (preview) preview.src = "./defaultprofile.png";
+                }
+            });
         }
 
-        const docRef = doc(db, "users", state.currentUserEmail);
-        await setDoc(docRef, state.currentUserData);
-        renderProfileTab(); // 다시 보기 모드로
-      };
+        // 버튼 숨기기
+        editBtn.style.display = "none";
 
-      document.getElementById("cancelBioBtn").onclick = () => {
-        renderProfileTab(); // 다시 보기 모드로
-      };
+        // 언어 설정 버튼과 로그아웃 버튼 숨기기
+        const langBtn = document.getElementById("langToggleBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (langBtn) langBtn.style.display = "none";
+        if (logoutBtn) logoutBtn.style.display = "none";
+
+        // 수정하기 버튼 밑에 언어 변경 및 로그아웃 버튼 추가
+        const languageLogoutWrapper = document.createElement("div");
+        languageLogoutWrapper.style = "text-align: center; margin-top: 20px;";
+        languageLogoutWrapper.innerHTML = `
+            <button id="langToggleBtn" style="width: 100%; padding: 12px; font-size: 16px; background: #ffffff; color: #10b981; border: 2px solid #6ee7b7; border-radius: 8px;">
+              🌐 ${t("profile.changeLang")}
+            </button>
+            <button id="logoutBtn" style="width: 100%; padding: 12px; font-size: 16px; background: #ffffff; color: #10b981; border: 2px solid #6ee7b7; border-radius: 8px; margin-top: 10px;">
+              ${t("common.logout")}
+            </button>
+        `;
+
+        // 버튼들을 기존 컨테이너에 추가
+        const container = document.getElementById("homeContent");
+        container.appendChild(languageLogoutWrapper);
+
+        // 언어 설정 버튼 클릭 이벤트
+        document.getElementById("langToggleBtn").onclick = () => renderLanguageSettingView();
+
+        // 로그아웃 버튼 클릭 이벤트
+        document.getElementById("logoutBtn").onclick = async () => {
+            const { auth } = await import('./firebase.js');
+            const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
+            await signOut(auth);
+            state.currentUserEmail = null;
+            state.currentUserData = null;
+            renderLogin();
+        };
+
+        // 저장 버튼 클릭 시
+        document.getElementById("saveBioBtn").onclick = async () => {
+            const newBio = document.getElementById("bioInput").value.trim();
+            const defaultBios = [
+                "자기소개가 없습니다.",
+                "No introduction.",
+                "自己紹介がありません。",
+                "暂无自我介绍。"
+            ];
+            state.currentUserData.bio = defaultBios.includes(newBio) ? "" : newBio;
+
+            // 프로필 이미지 업로드
+            const file = document.getElementById("profileImageInput")?.files?.[0];
+            if (file) {
+                const imageRef = ref(storage, `profileImages/${state.currentUserEmail}`);
+                await uploadBytes(imageRef, file); // 안정적 업로드
+                const url = await getDownloadURL(imageRef); // 업로드 후 URL 얻기
+                state.currentUserData.photoUrl = url;
+            }
+
+            const docRef = doc(db, "users", state.currentUserEmail);
+            await setDoc(docRef, state.currentUserData);
+            renderProfileTab(); // 다시 보기 모드로
+        };
+
+        // 취소 버튼 클릭 시
+        document.getElementById("cancelBioBtn").onclick = () => {
+            renderProfileTab(); // 다시 보기 모드로
+        };
     }
 
+
     renderViewMode();
-    setTimeout(adjustScrollBehaviorByBio, 0);
   }
 }
 
