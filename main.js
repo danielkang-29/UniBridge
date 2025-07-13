@@ -1409,10 +1409,6 @@ function renderHome(defaultTab = "home") {
     function enableBioEditMode() {
         enterEditMode();
 
-        // 하단바 숨기기
-        const bottomBar = document.getElementById("bottomBar");
-        if (bottomBar) bottomBar.style.display = "none"; // 나의 정보 화면에서 하단바 숨기기
-
         const bioView = document.getElementById("bioText");
         const editBtn = document.getElementById("editBioBtn");
 
@@ -1449,15 +1445,24 @@ function renderHome(defaultTab = "home") {
 
         // bioView 영역을 textarea로 교체
         const currentBio = bioView.textContent.trim();
-        bioView.outerHTML = `
+          bioView.outerHTML = `
             <textarea id="bioInput"
-              rows="6"
-              style="width: 100%; padding: 16px; border: 2px solid #42c7bc; border-radius: 12px;
-                    font-size: 16px; font-family: inherit; box-sizing: border-box; resize: vertical;
-                    background-color: #fff; line-height: 1.6; transition: border-color 0.3s, box-shadow 0.3s;
-                    outline: none; height: 180px; max-width: 100%;"
-              onfocus="this.style.borderColor='#42c7bc'; this.style.boxShadow='0 0 0 4px rgba(66, 199, 188, 0.2)'"
-              onblur="this.style.borderColor='#42c7bc'; this.style.boxShadow='none'">${currentBio}</textarea>
+            style="
+              width: 100%;
+              min-height: 150px; /* 최소 높이 설정 */
+              padding: 12px; /* 내부 여백 */
+              border: 2px solid #42c7bc; /* 테두리 색상 */
+              border-radius: 12px; /* 둥근 모서리 */
+              font-size: 16px; /* 글자 크기 */
+              font-family: inherit; /* 기본 글꼴 사용 */
+              box-sizing: border-box; /* 패딩과 테두리를 포함하여 크기 조정 */
+              resize: vertical; /* 세로 방향으로만 크기 조정 가능 */
+              background-color: #fff; /* 배경 색상 */
+              line-height: 1.6; /* 줄 간격 */
+              transition: border-color 0.3s, box-shadow 0.3s; /* 스타일 전환 애니메이션 */
+              outline: none; /* 포커스 시 외곽선 제거 */
+              ">${currentBio}
+            </textarea>
 
             <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
               <button id="saveBioBtn" style="
@@ -1567,6 +1572,7 @@ function renderHome(defaultTab = "home") {
 
             const docRef = doc(db, "users", state.currentUserEmail);
             await setDoc(docRef, state.currentUserData);
+            
             renderProfileTab(); // 다시 보기 모드로
         };
 
