@@ -961,10 +961,10 @@ function renderHome(defaultTab = "home") {
           <img src="${summary.photoUrl}" class="chat-avatar" />
           <div class="chat-info">
             <div class="chat-name">${summary.nickname}</div>
-            <div class="chat-last-message">${summary.lastText}</div>
+            <div class="chat-last-message" style="color: #808080; font-size: 0.9em;">${summary.lastText}</div>
           </div>
           <div class="chat-meta">
-            <span class="chat-time">${summary.lastTimeStr}</span>
+            <span class="chat-time" style="color: #808080;">${summary.lastTimeStr}</span>
             ${summary.unreadCount ? `<span class="chat-unread">${summary.unreadCount}</span>` : ""}
           </div>
         `;
@@ -1041,13 +1041,35 @@ function renderHome(defaultTab = "home") {
       <div id="chatBox" style="height: 100vh; min-height: 0; overflow-y: scroll; border: 0px solid #ccc; padding: 10px;"></div>
       <input type="file" id="imageInput" accept="image/*" style="display:none;" />
 
+      <div id="imagePreview" style="display: none; margin-top: 8px; position: relative;">
+        <img id="previewImg" src="" alt="Image preview" style="max-width: 100%; max-height: 200px; object-fit: cover;
+        border-radius: 8px; display: block; margin-left: auto; margin-right: 0;" />
+        <!-- 삭제 버튼(X) -->
+       <button id="removeImage" style="
+        position: absolute;
+        top: 0px;
+        right: 15px;
+        background: transparent; /* 배경을 투명으로 설정 */
+        color: #e5e7eb;
+        border: none; /* 테두리 없애기 */
+        width: 20px; /* 크기를 적당히 설정 */
+        height: 20px; /* 가로, 세로 길이를 동일하게 */
+        font-size: 24px; /* X 크기 키우기 */
+        text-align: center;
+        line-height: 20px; /* X 중앙에 위치하도록 설정 */
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 50%; /* 동그란 모양 */
+      ">x</button>
+      </div>
+
       <div id="chatInputRow" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 0;">
         <label for="imageInput" id="fileLabel" class="custom-file-label">
           <span class="plus-icon">+</span>
         </label>
 
         <input type="text" id="chatInput" placeholder="${t("chat.inputPlaceholder")}" 
-          style="flex: 1; padding: 10px; font-size: 16px; border-radius: 999px; border: 1px solid #ccc;" />
+          style="width: 300px; flex: 1; padding: 10px; font-size: 16px; border-radius: 999px; border: 1px solid #ccc;" />
 
         <button id="sendBtn" style="
           width: 60px; /* ✅ 고정 가로 너비 */
@@ -1064,6 +1086,26 @@ function renderHome(defaultTab = "home") {
       </div>
       
     `;
+
+    // 이미지 미리보기 기능
+    document.getElementById('imageInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const previewImg = document.getElementById('previewImg');
+          previewImg.src = e.target.result;
+          document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 미리보기에서 이미지를 제거하는 버튼
+    document.getElementById('removeImage').addEventListener('click', function() {
+      document.getElementById('imageInput').value = ''; // 파일 input 리셋
+      document.getElementById('imagePreview').style.display = 'none'; // 미리보기 영역 숨김
+    });
 
     const backBtn = document.getElementById("backBtn");
     if (backBtn) backBtn.onclick = () => renderChatTab();
@@ -1134,6 +1176,8 @@ function renderHome(defaultTab = "home") {
 
       chatInput.value = "";
       imageInput.value = "";
+
+      document.getElementById("imagePreview").style.display = 'none'; // 미리보기 이미지 숨기기
     };
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
@@ -1147,15 +1191,23 @@ function renderHome(defaultTab = "home") {
 
       snapshot.forEach(doc => {
         const msg = doc.data();
-        const formattedTime = formatTime(msg.timestamp); 
+        const formattedTime = formatTime(msg.timestamp);
 
         const msgElem = document.createElement("div");
         msgElem.className = `chat-bubble ${msg.sender === state.currentUserEmail ? 'sent' : 'received'}`;
+        
+        const timeElem = document.createElement("div");
+        timeElem.className = "bubble-time";
+        timeElem.textContent = formattedTime;
+
         msgElem.innerHTML = `
           <div class="bubble-content">${msg.text || ''}</div>
           ${msg.imageUrl ? `<img src="${msg.imageUrl}" style="max-width:150px; margin-top:5px"/>` : ''}
-          <div class="bubble-time">${formattedTime}</div>
         `;
+        
+        // 메시지 외부에 시간 요소 추가
+        msgElem.appendChild(timeElem);
+
         chatBox.appendChild(msgElem);
       });
 
