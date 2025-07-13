@@ -64,7 +64,7 @@
     #bottomBar {
       padding: 16px;
       background: #f5f5f5 !important;
-      margin-bottom: 50px;
+      margin-bottom: 80px;
       border-top: none;
     }
 
@@ -271,6 +271,8 @@
     }
 
     .chat-bubble {
+      display: block;
+      width: fit-content;
       max-width: 70%;
       margin: 8px;
       padding: 10px;
@@ -289,6 +291,28 @@
       background-color: white;
       margin-right: auto;
       text-align: left;
+    }
+
+    .bubble-content {
+      font-size: 15px;
+    }
+
+    .bubble-time {
+      position: absolute;
+      font-size: 10px;
+      color: #999; /* 시간 색상 */
+      bottom: 0;  /* 말풍선 밑 모서리 기준 */
+      padding-bottom: 4px; /* 시간과 말풍선 밑 모서리의 거리 조정 */
+    }
+
+    .chat-bubble.sent .bubble-time {
+      left: -50px;
+      right: auto;
+    }
+
+    .chat-bubble.received .bubble-time {
+      left: auto;
+      right: -50px;
     }
 
     .chat-input-wrapper {
@@ -325,6 +349,8 @@
       width: 45px;
       height: 45px;
       border-radius: 50%;
+      object-fit: cover;
+      object-position: center;
       margin-right: 10px;
       background-color: #b2dfdb;
     }
@@ -345,6 +371,28 @@
       padding: 2px 6px;
       font-size: 11px;
       margin-left: 5px;
+    }
+
+    #imagePreview {
+        display: none;
+        margin-top: 8px;
+    }
+
+    #previewImg {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    #removeImage {
+        background: red;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 5px;
+        font-size: 12px;
+        cursor: pointer;
     }
 
     #matchBtn,
