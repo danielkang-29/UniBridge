@@ -976,47 +976,6 @@ function renderHome(defaultTab = "home") {
     }
 
     if (typeof callbackFn === "function") callbackFn();
-
-    function enableSwipeBackOnChat() {
-      let startX = 0;
-      let startY = 0;
-      let endX = 0;
-      let endY = 0;
-      const threshold = 80; // 최소 스와이프 거리 (X축)
-      const verticalThreshold = 60; // 수직 움직임은 무시
-
-      const chatElement = document.getElementById("chatRoom"); // 채팅 전체 영역
-
-      if (!chatElement) return;
-
-      chatElement.addEventListener("touchstart", (e) => {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-      });
-
-      // ✅ 왼쪽 → 오른쪽 스와이프일 때만 스크롤 방지
-      chatElement.addEventListener("touchmove", (e) => {
-        const deltaX = e.touches[0].clientX - startX;
-        const deltaY = Math.abs(e.touches[0].clientY - startY);
-
-        if (deltaX > 0 && Math.abs(deltaX) > Math.abs(deltaY)) {
-          e.preventDefault(); // X축 스와이프일 경우에만 방지
-        }
-      }, { passive: false });
-
-      chatElement.addEventListener("touchend", (e) => {
-        endX = e.changedTouches[0].clientX;
-        endY = e.changedTouches[0].clientY;
-
-        const deltaX = endX - startX;
-        const deltaY = Math.abs(endY - startY);
-
-        if (deltaX > threshold && deltaY < verticalThreshold) {
-          console.log("← 스와이프로 이전 화면 이동");
-          renderMatchingTab(); // ← 이전 화면 이동
-        }
-      });
-    }
   }
 
   window.renderChatTab = renderChatTab; // ✅ 이 줄 추가
@@ -1074,6 +1033,7 @@ function renderHome(defaultTab = "home") {
     backNav.appendChild(name);
 
     homeContent.innerHTML = `
+    <div id="chatRoom" style="display: flex; flex-direction: column; height: 100dvh;">
       <div id="callStatus" style="display:none; color:green; font-weight:bold;">
         ${t("chat.inCall")}
       </div>
@@ -1262,9 +1222,50 @@ function renderHome(defaultTab = "home") {
       });
     });
 
-    
-
     if (backBtn) backBtn.onclick = () => renderChatTab();
+
+    function enableSwipeBackOnChat() {
+      let startX = 0;
+      let startY = 0;
+      let endX = 0;
+      let endY = 0;
+      const threshold = 80; // 최소 스와이프 거리 (X축)
+      const verticalThreshold = 60; // 수직 움직임은 무시
+
+      const chatElement = document.getElementById("chatRoom"); // 채팅 전체 영역
+
+      if (!chatElement) return;
+
+      chatElement.addEventListener("touchstart", (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      });
+
+      // ✅ 왼쪽 → 오른쪽 스와이프일 때만 스크롤 방지
+      chatElement.addEventListener("touchmove", (e) => {
+        const deltaX = e.touches[0].clientX - startX;
+        const deltaY = Math.abs(e.touches[0].clientY - startY);
+
+        if (deltaX > 0 && Math.abs(deltaX) > Math.abs(deltaY)) {
+          e.preventDefault(); // X축 스와이프일 경우에만 방지
+        }
+      }, { passive: false });
+
+      chatElement.addEventListener("touchend", (e) => {
+        endX = e.changedTouches[0].clientX;
+        endY = e.changedTouches[0].clientY;
+
+        const deltaX = endX - startX;
+        const deltaY = Math.abs(endY - startY);
+
+        if (deltaX > threshold && deltaY < verticalThreshold) {
+          console.log("← 스와이프로 이전 화면 이동");
+          renderMatchingTab(); // ← 이전 화면 이동
+        }
+      });
+    }
+
+    enableSwipeBackOnChat();
 
   }
 
@@ -1422,11 +1423,6 @@ function renderHome(defaultTab = "home") {
     }
 
     function renderViewMode() {
-      const bottomBar = document.getElementById("bottomBar");
-      if (bottomBar) {
-        bottomBar.style.marginBottom = "80px";
-      }
-
       exitEditMode();
 
       const u = data;
@@ -1505,11 +1501,6 @@ function renderHome(defaultTab = "home") {
 
 
     function enableBioEditMode() {
-      const bottomBar = document.getElementById("bottomBar");
-      if (bottomBar) {
-        bottomBar.style.marginBottom = "60px";
-      }
-
         enterEditMode();
 
         const bioView = document.getElementById("bioText");
