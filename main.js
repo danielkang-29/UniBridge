@@ -1260,7 +1260,7 @@ function renderHome(defaultTab = "home") {
 
         if (deltaX > threshold && deltaY < verticalThreshold) {
           console.log("← 스와이프로 이전 화면 이동");
-          renderMatchingTab(); // ← 이전 화면 이동
+          renderChatTab(); // ✅ 채팅 목록 화면으로 이동
         }
       });
     }
