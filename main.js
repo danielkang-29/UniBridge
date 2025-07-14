@@ -1008,6 +1008,10 @@ function renderHome(defaultTab = "home") {
     const oldNav = document.getElementById("homeMenu");
     if (oldNav) oldNav.remove();
 
+    // ✅ 하단바 초기화
+    const bottomBar = document.getElementById("bottomBar");
+    if (bottomBar) bottomBar.innerHTML = "";
+
     // ✅ "← 홈으로 돌아가기" 버튼 삽입
     const userSnap = await getDoc(doc(db, "users", partnerEmail));
     const partnerData = userSnap.exists() ? userSnap.data() : {};
@@ -1769,25 +1773,52 @@ export function renderCurrentMatchStep() {
   const html = `
     <h2>${t("match.candidateTitle")}</h2>
 
-    <div class="basic-info">
-      <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
-      <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
-      <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
-      <p><strong>${t("profile.major")}: </strong> ${candidate.major}</p>
-      <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
-      <p><strong>${t("profile.personality")}: </strong> ${Array.isArray(candidate.personality) ? candidate.personality.map(p => t(p)).join(", ") : t(candidate.personality)}</p>
-      <p><strong>${t("profile.purpose")}: </strong> ${Array.isArray(candidate.purpose) ? candidate.purpose.map(p => t(p)).join(", ") : t(candidate.purpose)}</p>
+    <!-- 프로필 & 소개를 감싸는 영역 -->
+    <div id="profileArea" style="min-height: 300px;">
+      <div class="basic-info">
+        <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
+        <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
+        <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
+        <p><strong>${t("profile.major")}: </strong> ${candidate.major}</p>
+        <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
+        <p><strong>${t("profile.personality")}: </strong> ${Array.isArray(candidate.personality) ? candidate.personality.map(p => t(p)).join(", ") : t(candidate.personality)}</p>
+        <p><strong>${t("profile.purpose")}: </strong> ${Array.isArray(candidate.purpose) ? candidate.purpose.map(p => t(p)).join(", ") : t(candidate.purpose)}</p>
+      </div>
+
+      <div class="introduction" style="display:none;">
+        <p>${candidate.bio?.trim() || t("common.noBio")}</p>
+      </div>
     </div>
 
-    <div class="introduction" style="display:none;">
-      <p>${candidate.bio?.trim() || t("common.noBio")}</p>
-    </div>
-
+    <!-- 버튼은 프로필 영역 바깥에 두고 고정 -->
     <button class="toggle-intro-btn" data-email="${candidate.id}">${t("action.showIntro") || "자기소개 보기"}</button>
 
     <div class="decision-buttons">
-      <button id="acceptBtn" class="accept-btn">${t("match.accept")}</button>
-      <button id="rejectBtn" class="reject-btn">${t("match.reject")}</button>
+      <button class="accept-btn" id="acceptBtn" style="
+        background-color: #4ade80;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      ">
+        ${t("match.accept") || "수락"}
+      </button>
+
+      <button class="reject-btn" id="rejectBtn" style="
+        background-color: #f87171;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      ">
+        ${t("match.reject") || "거부"}
+      </button>
     </div>
   `;
 
@@ -1920,23 +1951,55 @@ function renderMatchCandidate() {
     return;
   }
 
-  content.innerHTML = `
-    <h2>${t("match.candidate") || "매칭 후보"}</h2>
-    <div class="basic-info">
-      <p><strong>${t("age") || "나이"}:</strong> ${candidate.age}</p>
-      <p><strong>${t("school") || "학교"}:</strong> ${t(candidate.school)}</p>
-      <p><strong>${t("major") || "학과"}:</strong> ${candidate.major}</p>
-      <p><strong>${t("mbti") || "MBTI"}:</strong> ${candidate.mbti}</p>
-      <p><strong>${t("personality") || "성격"}:</strong> ${formatArray(candidate.personality)}</p>
-      <p><strong>${t("purpose") || "관심사"}:</strong> ${formatArray(candidate.purpose)}</p>
+  const html = `
+    <h2>${t("match.candidateTitle")}</h2>
+
+    <!-- 프로필 & 소개를 감싸는 영역 -->
+    <div id="profileArea" style="min-height: 300px;">
+      <div class="basic-info">
+        <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
+        <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
+        <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
+        <p><strong>${t("profile.major")}: </strong> ${candidate.major}</p>
+        <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
+        <p><strong>${t("profile.personality")}: </strong> ${Array.isArray(candidate.personality) ? candidate.personality.map(p => t(p)).join(", ") : t(candidate.personality)}</p>
+        <p><strong>${t("profile.purpose")}: </strong> ${Array.isArray(candidate.purpose) ? candidate.purpose.map(p => t(p)).join(", ") : t(candidate.purpose)}</p>
+      </div>
+
+      <div class="introduction" style="display:none;">
+        <p>${candidate.bio?.trim() || t("common.noBio")}</p>
+      </div>
     </div>
-    <div class="introduction" style="display:none;">
-      <p>${candidate.bio?.trim() || t("common.noBio")}</p>
-    </div>
+
+    <!-- 버튼은 프로필 영역 바깥에 두고 고정 -->
     <button class="toggle-intro-btn" data-email="${candidate.id}">${t("action.showIntro") || "자기소개 보기"}</button>
+
     <div class="decision-buttons">
-      <button class="accept-btn" id="acceptBtn">${t("accept") || "수락"}</button>
-      <button class="reject-btn" id="rejectBtn">${t("reject") || "거부"}</button>
+      <button class="accept-btn" id="acceptBtn" style="
+        background-color: #4ade80;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      ">
+        ${t("match.accept") || "수락"}
+      </button>
+
+      <button class="reject-btn" id="rejectBtn" style="
+        background-color: #f87171;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      ">
+        ${t("match.reject") || "거부"}
+      </button>
     </div>
   `;
 
