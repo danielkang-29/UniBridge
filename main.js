@@ -1037,7 +1037,7 @@ function renderHome(defaultTab = "home") {
     backNav.appendChild(name);
 
     homeContent.innerHTML = `
-    <div id="chatRoom" style="display: flex; flex-direction: column; height: 100dvh;">
+    <div id="chatRoom" style="display: flex; flex-direction: column; height: 100dvh; padding-top: 41px;">
       <div id="callStatus" style="display:none; color:green; font-weight:bold;">
         ${t("chat.inCall")}
       </div>
