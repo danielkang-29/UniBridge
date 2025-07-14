@@ -20,33 +20,6 @@ function setVh() {
 window.addEventListener('resize', setVh);
 window.addEventListener('load', setVh);
 
-function initKeyboardGuardForBackNav() {
-  const backNav = document.getElementById("backNav");
-  if (!backNav) return;
-
-  const initialHeight = window.innerHeight;
-
-  window.addEventListener("resize", () => {
-    const currentHeight = window.innerHeight;
-
-    // 모바일 디바이스에서만 적용 (예: 600px 이하)
-    const isMobile = window.innerWidth <= 600;
-
-    if (!isMobile) {
-      backNav.style.top = "0px"; // 데스크톱이면 그냥 원위치
-      return;
-    }
-
-    if (currentHeight < initialHeight - 100) {
-      // 키보드 올라온 걸로 간주
-      backNav.style.top = "20px"; // 약간 아래로 이동시켜서 덮이지 않게
-    } else {
-      // 키보드 내려감
-      backNav.style.top = "0px"; // 원래 위치로 복귀
-    }
-  });
-}
-
 // 최상단에 onAuthStateChanged 유지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1056,8 +1029,6 @@ function renderHome(defaultTab = "home") {
     const container = document.getElementById("app");
     container.prepend(backNav);
 
-    initKeyboardGuardForBackNav();
-
     // ✅ 이제 안전하게 사용 가능
     const name = document.createElement("span");
     name.textContent = nickname;
@@ -1168,7 +1139,7 @@ function renderHome(defaultTab = "home") {
     }
 
     const chatBox = document.getElementById("chatBox");
-    chatBox.style.marginTop = "41px";
+    chatBox.style.marginTop = "41px"; // ✅ 상단 고정바에 가려지지 않게 여백 확보
       chatBox.style.cssText = `
         height: 400px;
         overflow-y: scroll;
