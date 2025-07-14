@@ -20,6 +20,30 @@ function setVh() {
 window.addEventListener('resize', setVh);
 window.addEventListener('load', setVh);
 
+function initKeyboardGuardForBackNav() {
+  const backNav = document.getElementById("backNav");
+  if (!backNav) return;
+
+  const initialHeight = window.innerHeight;
+
+  window.addEventListener("resize", () => {
+    const currentHeight = window.innerHeight;
+
+    const isMobile = window.innerWidth <= 600; // 모바일만 감지
+    if (!isMobile) return;
+
+    const keyboardLikelyUp = currentHeight < initialHeight - 100;
+
+    if (keyboardLikelyUp) {
+      // 키보드가 올라온 것으로 간주 → 살짝 아래로 이동시켜 다시 보이게 함
+      backNav.style.top = "20px";
+    } else {
+      // 키보드 내려간 상태 → 원래 위치로 복귀
+      backNav.style.top = "0px";
+    }
+  });
+}
+
 // 최상단에 onAuthStateChanged 유지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1028,6 +1052,9 @@ function renderHome(defaultTab = "home") {
     const backNav = renderChatBackButton();
     const container = document.getElementById("app");
     container.prepend(backNav);
+
+    // 📌 키보드에 상단바 밀림 방지
+    initKeyboardGuardForBackNav();
 
     // ✅ 이제 안전하게 사용 가능
     const name = document.createElement("span");
