@@ -44,6 +44,7 @@
       max-height: 100%;
       flex: 1;
       display: flex;
+      justify-content: center;
       flex-direction: column;
       margin: 5vh auto;
       width: 100%;
@@ -532,6 +533,9 @@
       overflow-y: auto;
       scrollbar-width: none !important;       /* Firefox */
       -ms-overflow-style: none !important;    /* IE/Edge */
+      width: 100%;
+      max-width: 393px;
+      box-sizing: border-box;
     }
 
     #homeContent::-webkit-scrollbar {
@@ -603,17 +607,18 @@
     }
 
     #chatInputRow {
-      position: relative;
+      position: fixed !important;
       bottom: 0;
       background-color: #f5f5f5;
-      padding: 10px 12px 15px 12px; /* 좌우 여백 12px로 조정 */
-      width: 100%;
-      max-width: none !important;
+      padding: 10px 12px 0px 12px; /* 좌우 여백 12px로 조정 */
+      flex: 1;
+      max-width: 393px !important;
       display: flex;
       align-items: center;
       gap: 8px;
       z-index: 10;
       box-sizing: border-box;
+      border-top: 1px solid #ccc; /* 더 진한 회색 */
     }
 
 
@@ -705,12 +710,15 @@
     #backNav {
       position: fixed;
       top: 0;
-      left: 0;
-      right: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 393px; /* ✅ 너가 지정한 모바일 박스 너비 */
       height: 41px;
       background-color: #f5f5f5;
       border-bottom: 1px solid #ccc;
       z-index: 999;
+      box-sizing: border-box;
     }
 
     /* 모든 스크롤바 숨기기 (스크롤은 유지됨) */
