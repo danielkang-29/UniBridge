@@ -157,12 +157,12 @@ function renderChatBackButton() {
     background-color: #f5f5f5;
     border-bottom: 1px solid #ccc;
     position: sticky;
-    top: 0;
+    top: 56px;
     z-index: 100;
-    width: 100%;
+    width: 393px;
     height: 41px;
     padding: 0;
-    position: relative;
+    position: fixed;
     box-sizing: border-box;
   `;
 
