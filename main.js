@@ -1139,6 +1139,7 @@ function renderHome(defaultTab = "home") {
     }
 
     const chatBox = document.getElementById("chatBox");
+    chatBox.style.marginTop = "41px";
       chatBox.style.cssText = `
         height: 400px;
         overflow-y: scroll;
