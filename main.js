@@ -2417,5 +2417,12 @@ function exitEditMode() {
   document.body.style.overflow = 'hidden'; // ✅ 스크롤 막기
 }
 
-// DOM 준비되면 로그인 화면부터 띄우기
 document.addEventListener('DOMContentLoaded', () => {});
+
+function updateViewportHeight() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+window.addEventListener('resize', updateViewportHeight);
+window.addEventListener('load', updateViewportHeight);
