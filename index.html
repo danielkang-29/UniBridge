@@ -38,6 +38,7 @@
     }
 
     #app {
+      position: relative;
       height: 100%;
       max-height: 100%;
       flex: 1;
@@ -568,16 +569,23 @@
     }
 
     #chatRoom {
+      position: absolute; /* 또는 fixed, app 내부이면 absolute 추천 */
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 393px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      height: 100vh; /* 전체 화면 기준 */
-      overflow: hidden;
-      padding-bottom: env(safe-area-inset-bottom, 8px); /* iOS 대응 포함 */
+      background-color: #f5f5f5;
+      z-index: 50;
     }
 
     #chatBox {
       flex: 1;
       overflow-y: auto;
+      margin-top: 56px;
       padding: 10px;
       background-color: #f5f5f5;
       scrollbar-width: none;
@@ -585,11 +593,15 @@
     }
 
     #chatInputRow {
+      position: sticky;
+      bottom: -10px;
+      background-color: #f5f5f5;
+      padding: 10px 10px 15px 10px;
       display: flex;
-      align-items: center; /* ✅ 버튼과 입력창 수직 정렬 */
+      align-items: center;
       gap: 8px;
+      z-index: 10;
     }
-
 
     #chatInput {
       flex: 1;
@@ -643,9 +655,15 @@
       .toggleIntroBtn:hover {
         background-color: #ffffff !important;
       }
+       .toggle-intro-btn:hover {
+        background-color: #ffffff !important;
+      }
       #prevAccept:hover,
       #nextAccept:hover {
         background-color: var(--primary-color) !important;
+      }
+      .match-question-btn:hover {
+        background-color: #ffffff !important;
       }
     }
 
@@ -659,6 +677,15 @@
     #homeContent,
     #bottomFixed {
       background-color: #f5f5f5 !important;
+    }
+
+    #chatRoomWrapper {
+      max-width: 393px;
+      width: 100%;
+      margin: 0 auto;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
     }
 
     /* 모든 스크롤바 숨기기 (스크롤은 유지됨) */
