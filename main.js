@@ -1259,8 +1259,17 @@ function renderHome(defaultTab = "home") {
         const deltaY = Math.abs(endY - startY);
 
         if (deltaX > threshold && deltaY < verticalThreshold) {
-          console.log("← 스와이프로 이전 화면 이동");
-          renderChatTab(); // ✅ 채팅 목록 화면으로 이동
+          console.log("← 스와이프로 채팅 목록으로 이동");
+
+          // ✅ 기존 back nav 제거
+          const oldBackNav = document.getElementById("backToChatListBtn")?.closest("nav");
+          if (oldBackNav) oldBackNav.remove();
+
+          // ✅ 상단 탭(nav) 복구
+          renderTopNav();
+
+          // ✅ 채팅 목록 렌더링
+          renderChatTab();
         }
       });
     }
