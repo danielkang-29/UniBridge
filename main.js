@@ -1148,6 +1148,11 @@ function renderHome(defaultTab = "home") {
     // ✅ Webkit 계열(Chrome, Safari 등)에선 따로 ::-webkit-scrollbar 숨기기 필요
     chatBox.classList.add("hide-scroll");
 
+    chatBox.style.padding = "10px 12px"; // 상하 10px, 좌우 12px
+
+    const chatInputRow = document.getElementById("chatInputRow");
+    chatInputRow.style.margin = "0";  // 좌우 여백 제거
+
     const chatInput = document.getElementById("chatInput");
     const imageInput = document.getElementById("imageInput");
 
