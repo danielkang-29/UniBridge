@@ -13,6 +13,13 @@ import {
   t,
 } from './auth.js';
 
+function setVh() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+window.addEventListener('resize', setVh);
+window.addEventListener('load', setVh);
+
 // 최상단에 onAuthStateChanged 유지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -342,6 +349,7 @@ const servers = {
 
 // --- 홈 화면, 탭 UI 보여주기 ---
 function renderHome(defaultTab = "home") {
+  enableScrollBack(); // ✅ 홈 화면 등에서는 스크롤 복구
   const container = document.getElementById("app");
   container.innerHTML = `
     <div id="appLayout" style="display:flex; flex-direction:column; height:100vh; overflow:hidden;">
@@ -1275,7 +1283,7 @@ function renderHome(defaultTab = "home") {
     }
 
     enableSwipeBackOnChat();
-
+    disableScrollForChat(); // ✅ 채팅 진입 시 스크롤 막기
   }
 
   function getLocale() {
@@ -2420,6 +2428,28 @@ function enterEditMode() {
 
 function exitEditMode() {
   document.body.style.overflow = 'hidden'; // ✅ 스크롤 막기
+}
+
+function disableScrollForChat() {
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  const app = document.getElementById("app");
+  if (app) {
+    app.style.overflow = "hidden";
+    app.style.maxHeight = "100dvh";
+  }
+}
+
+function enableScrollBack() {
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+
+  const app = document.getElementById("app");
+  if (app) {
+    app.style.overflow = "";
+    app.style.maxHeight = "";
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {});
