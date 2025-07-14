@@ -1043,7 +1043,7 @@ function renderHome(defaultTab = "home") {
       </div>
       <audio id="remoteAudio" autoplay></audio>
 
-      <div id="chatBox" style="height: 100vh; min-height: 0; overflow-y: scroll; border: 0px solid #ccc; padding: 10px;"></div>
+      <div id="chatBox" style="height: 100vh; min-height: 0; overflow-y: scroll; padding: 10px;"></div>
       <input type="file" id="imageInput" accept="image/*" style="display:none;" />
 
       <div id="imagePreview" style="display: none; margin-top: 8px; position: relative;">
@@ -1728,6 +1728,7 @@ export function renderCurrentMatchStep() {
     q.options.forEach(opt => {
       const btn = document.createElement("button");
       btn.textContent = t(opt);
+      btn.classList.add("match-question-btn");
       if (state.matchAnswers[q.id] === opt) btn.classList.add("selected");
       btn.onclick = () => {
         state.matchAnswers[q.id] = opt;
@@ -1921,6 +1922,7 @@ async function handleDecision(accepted) {
   q.options.forEach(opt => {
     const btn = document.createElement("button");
     btn.textContent = t(opt);
+    btn.classList.add("match-question-btn");
     if (state.matchAnswers[q.id] === opt) btn.classList.add("selected");
     btn.onclick = () => {
       state.matchAnswers[q.id] = opt;
