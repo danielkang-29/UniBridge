@@ -569,7 +569,7 @@
     }
 
     #chatRoom {
-      position: absolute; /* 또는 fixed, app 내부이면 absolute 추천 */
+      position: absolute;
       top: 0;
       bottom: 0;
       left: 0;
@@ -580,7 +580,12 @@
       flex-direction: column;
       background-color: #f5f5f5;
       z-index: 50;
+      height: calc(var(--vh, 1vh) * 100);  /* ← 100vh 대신 이걸 사용 */
+
+      border-radius: 16px;         /* ✅ 둥근 모서리 추가 */
+      overflow: hidden;            /* ✅ 안쪽 내용이 테두리 넘지 않게 */
     }
+
 
     #chatBox {
       flex: 1;
@@ -593,8 +598,8 @@
     }
 
     #chatInputRow {
-      position: sticky;
-      bottom: -10px;
+      position: relative;
+      bottom: 0;
       background-color: #f5f5f5;
       padding: 10px 10px 15px 10px;
       display: flex;
