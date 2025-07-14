@@ -1229,11 +1229,10 @@ function renderHome(defaultTab = "home") {
       let startY = 0;
       let endX = 0;
       let endY = 0;
-      const threshold = 80; // 최소 스와이프 거리 (X축)
-      const verticalThreshold = 60; // 수직 움직임은 무시
+      const threshold = 80;
+      const verticalThreshold = 60;
 
-      const chatElement = document.getElementById("chatRoom"); // 채팅 전체 영역
-
+      const chatElement = document.getElementById("chatRoom");
       if (!chatElement) return;
 
       chatElement.addEventListener("touchstart", (e) => {
@@ -1241,13 +1240,12 @@ function renderHome(defaultTab = "home") {
         startY = e.touches[0].clientY;
       });
 
-      // ✅ 왼쪽 → 오른쪽 스와이프일 때만 스크롤 방지
       chatElement.addEventListener("touchmove", (e) => {
         const deltaX = e.touches[0].clientX - startX;
         const deltaY = Math.abs(e.touches[0].clientY - startY);
 
         if (deltaX > 0 && Math.abs(deltaX) > Math.abs(deltaY)) {
-          e.preventDefault(); // X축 스와이프일 경우에만 방지
+          e.preventDefault();
         }
       }, { passive: false });
 
@@ -1261,15 +1259,8 @@ function renderHome(defaultTab = "home") {
         if (deltaX > threshold && deltaY < verticalThreshold) {
           console.log("← 스와이프로 채팅 목록으로 이동");
 
-          // ✅ 기존 back nav 제거
-          const oldBackNav = document.getElementById("backToChatListBtn")?.closest("nav");
-          if (oldBackNav) oldBackNav.remove();
-
-          // ✅ 상단 탭(nav) 복구
-          renderTopNav();
-
-          // ✅ 채팅 목록 렌더링
-          renderChatTab();
+          // ✅ 기존 뒤로가기 버튼을 모방해 renderHome("chat") 호출
+          renderHome("chat");
         }
       });
     }
@@ -1552,7 +1543,7 @@ function renderHome(defaultTab = "home") {
             <textarea id="bioInput"
             style="
               width: 100%;
-              min-height: 150px; /* 최소 높이 설정 */
+              min-height: 140px; /* 최소 높이 설정 */
               padding: 12px; /* 내부 여백 */
               border: 2px solid #42c7bc; /* 테두리 색상 */
               border-radius: 12px; /* 둥근 모서리 */
