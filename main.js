@@ -1127,6 +1127,15 @@ function renderHome(defaultTab = "home") {
       
     `;
 
+    // ✅ 입력창 스타일 조정
+    const chatInputRow = document.getElementById("chatInputRow");
+    if (chatInputRow) {
+      chatInputRow.style.margin = "0";
+      chatInputRow.style.padding = "0 12px";
+      chatInputRow.style.boxSizing = "border-box";
+    }
+
+
     // 이미지 미리보기 기능
     document.getElementById('imageInput').addEventListener('change', function(event) {
       const file = event.target.files[0];
@@ -1185,8 +1194,6 @@ function renderHome(defaultTab = "home") {
     chatBox.classList.add("hide-scroll");
 
     chatBox.style.padding = "10px 12px"; // 상하 10px, 좌우 12px
-
-    const chatInputRow = document.getElementById("chatInputRow");
     chatInputRow.style.margin = "0";  // 좌우 여백 제거
 
     const chatInput = document.getElementById("chatInput");
