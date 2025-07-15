@@ -1102,7 +1102,7 @@ function renderHome(defaultTab = "home") {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 10px auto 0 auto;
+        margin-top: auto;
         transform: translateX(3%);
         width: 94%;
       ">
