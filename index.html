@@ -25,6 +25,25 @@
     window.addEventListener('orientationchange', setRealVh);
     window.addEventListener('load', setRealVh);
     setRealVh(); // 최초 실행
+
+    document.addEventListener('touchstart', function (e) {
+      // 두 손가락 이상 터치 시 기본 동작 방지 (줌 등)
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = new Date().getTime();
+
+      // 300ms 이내의 연속 터치 (더블탭) 시 기본 동작 방지
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault(); // 더블탭 시 화면 튐 방지
+      }
+
+      lastTouchEnd = now;
+    }, false);
   </script>
   
   <style>
@@ -794,6 +813,7 @@
 
       document.addEventListener("DOMContentLoaded", () => {
       });
+      
     </script>
   </body>
 </html>
