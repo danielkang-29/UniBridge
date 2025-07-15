@@ -13,35 +13,30 @@ import {
   t,
 } from './auth.js';
 
-function setVh() {
+function setRealVH() {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
-window.addEventListener('resize', setVh);
-window.addEventListener('load', setVh);
+window.addEventListener('resize', setRealVH);
+window.addEventListener('load', setRealVH);
 
 function initKeyboardGuardForBackNav() {
-  const backNav = document.getElementById("backNav");
-  if (!backNav) return;
+  const nav = document.getElementById("homeMenu") || document.querySelector("nav");
+  if (!nav) return;
 
-  const initialHeight = window.innerHeight;
-
-  window.addEventListener("resize", () => {
-    const currentHeight = window.innerHeight;
-
-    const isMobile = window.innerWidth <= 600; // 모바일만 감지
-    if (!isMobile) return;
-
-    const keyboardLikelyUp = currentHeight < initialHeight - 100;
-
-    if (keyboardLikelyUp) {
-      // 키보드가 올라온 것으로 간주 → 살짝 아래로 이동시켜 다시 보이게 함
-      backNav.style.top = "20px";
+  const updateNavPosition = () => {
+    const isKeyboardOpen = window.innerHeight < screen.height * 0.75; // 감지 기준 (기기 따라 조정)
+    if (isKeyboardOpen) {
+      nav.style.position = "fixed";
+      nav.style.top = "0";
+      nav.style.zIndex = "999";
     } else {
-      // 키보드 내려간 상태 → 원래 위치로 복귀
-      backNav.style.top = "0px";
+      nav.style.position = "sticky"; // 원래 상태로
     }
-  });
+  };
+
+  window.addEventListener("resize", updateNavPosition);
+  window.addEventListener("load", updateNavPosition);
 }
 
 // 최상단에 onAuthStateChanged 유지
