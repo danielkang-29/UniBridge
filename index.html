@@ -616,12 +616,14 @@
       background-color: #f5f5f5;
       scrollbar-width: none;
       -ms-overflow-style: none;
+      padding-bottom: 90px !important;
     }
 
     #chatInputRow {
       margin: 0 auto; 
       
-      width: 100%;  
+      width: 354px !important;  
+      margin-left: 19.5px !important;
       position: relative;
       bottom: 0;
       max-width: 393px;
@@ -697,15 +699,6 @@
       }
       .match-question-btn:hover {
         background-color: #ffffff !important;
-      }
-    }
-
-    @supports(padding: max(0px)) {
-      @media screen and (max-device-width: 430px) and (-webkit-min-device-pixel-ratio: 2) {
-        #chatInputRow {
-          bottom: env(safe-area-inset-bottom);
-          padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        }
       }
     }
 
