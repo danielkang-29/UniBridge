@@ -1200,13 +1200,17 @@ function renderHome(defaultTab = "home") {
 
     const sendBtn = document.getElementById("sendBtn");
 
-    // ✅ 포커스 유지: 클릭 전에 미리 막아줌
+    // ✅ blur 방지 → 버튼을 클릭했을 때 focus 유지 (중요!)
+    sendBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      chatInput.focus(); // iOS: focus 유지 강제
+    }, { passive: false });  // 중요: passive: false 해야 preventDefault가 동작함
+
     sendBtn.addEventListener("mousedown", (e) => {
-      e.preventDefault(); // 👉 클릭 시 blur 되는 걸 막음
-      chatInput.focus();  // 👉 키보드 유지
+      e.preventDefault();
+      chatInput.focus(); // desktop 대응
     });
 
-    // 기존 onclick은 그대로 유지
     sendBtn.onclick = async () => {
       const text = chatInput.value.trim();
       const file = imageInput.files[0];
