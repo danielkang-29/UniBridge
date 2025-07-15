@@ -46,7 +46,6 @@
       flex-direction: column;
       margin: 5vh auto;
       width: 100%;
-      max-width: 393px;
       background: #f5f5f5 !important;
       padding: 20px;
       border-radius: 10px;
@@ -580,7 +579,6 @@
       right: 0;
 
       width: 100%;
-      max-width: 393px;
       margin: 0 auto;
 
       display: flex;
@@ -606,25 +604,19 @@
     }
 
     #chatInputRow {
-      position: fixed;
+      position: relative;
       bottom: 0;
-      left: 0;
-      right: 0;
-
-      width: 100%;
-      max-width: none; /* iPhone에서 깨짐 방지 */
-      box-sizing: border-box;
-
+      max-width: none;
+      max-height: 65px !important;
       background-color: #f5f5f5;
-      padding-left: calc(12px + env(safe-area-inset-left));
-      padding-right: calc(12px + env(safe-area-inset-right));
-      padding-top: 10px;
-      padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 하단 노치도 대응 */
-
+      padding: 10px 10px 10px 10px;
+      border-top: 1px solid #d1d5db;
       display: flex;
       align-items: center;
       gap: 8px;
       z-index: 10;
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
     }
 
     #chatInput {
@@ -704,7 +696,6 @@
     }
 
     #chatRoomWrapper {
-      max-width: 393px;
       width: 100%;
       margin: 0 auto;
       height: calc(var(--vh, 1vh) * 100);  /* 진짜 화면 높이 */
