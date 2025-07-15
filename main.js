@@ -1199,6 +1199,14 @@ function renderHome(defaultTab = "home") {
     });
 
     const sendBtn = document.getElementById("sendBtn");
+
+    // ✅ 포커스 유지: 클릭 전에 미리 막아줌
+    sendBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault(); // 👉 클릭 시 blur 되는 걸 막음
+      chatInput.focus();  // 👉 키보드 유지
+    });
+
+    // 기존 onclick은 그대로 유지
     sendBtn.onclick = async () => {
       const text = chatInput.value.trim();
       const file = imageInput.files[0];
@@ -1223,11 +1231,7 @@ function renderHome(defaultTab = "home") {
 
       chatInput.value = "";
       imageInput.value = "";
-
-      document.getElementById("imagePreview").style.display = 'none'; // 미리보기 이미지 숨기기
-
-      // ✅ 키보드 유지: 다시 focus
-      chatInput.focus();
+      document.getElementById("imagePreview").style.display = 'none';
     };
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
