@@ -619,6 +619,9 @@
       z-index: 10;
       padding-left: calc(12px + env(safe-area-inset-left));
       padding-right: calc(12px + env(safe-area-inset-right));
+
+      /* ✅ 하단 홈 인디케이터 영역 보호 */
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
     }
 
     #chatInput {
@@ -663,9 +666,6 @@
 
       .calendar-header span {
         font-size: 16px;
-      }
-      #chatInputRow {
-        max-width: 393px !important;
       }
     }
 
