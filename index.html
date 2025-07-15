@@ -45,6 +45,14 @@
       background-color: #f5f5f5 !important;
     }
 
+    html, body {
+      overscroll-behavior: none !important;
+      touch-action: manipulation !important;
+      -webkit-overflow-scrolling: auto !important;
+      overflow: hidden !important;
+      position: relative !important;
+    }
+
     body {
       display: flex;
       flex-direction: column;
@@ -389,11 +397,11 @@
 
     #backNav {
       width: 354px !important;  
-      max-width: 354px !important;
       position: fixed !important;
       top: 0;
       left: 50%;
       transform: translateX(-50%);
+      width: 100%;
       margin-top: 56px !important;
       height: 56px;
       display: flex;
@@ -653,12 +661,14 @@
       padding-bottom: 90px !important;
     }
 
-    #chatInputRow {      
+    #chatInputRow {
+      margin: 0 auto; 
+      
       width: 354px !important;  
       margin-left: 19.5px !important;
       position: relative;
       bottom: 0 !important;
-      max-width: 354px !important;
+      max-width: 393px !important;
       box-sizing: border-box; 
       background-color: #f5f5f5;
       padding: 10px 0 !important;
@@ -667,6 +677,7 @@
       align-items: center;
       gap: 8px;
       z-index: 10;
+      padding: 12px;
     }
 
     #chatInput {
@@ -766,14 +777,6 @@
     #homeContentWrapper::-webkit-scrollbar,
     .hide-scroll::-webkit-scrollbar {
       display: none;                   /* Chrome, Safari */
-    }
-
-    html, body {
-      overscroll-behavior: none !important;
-      touch-action: manipulation !important;
-      -webkit-overflow-scrolling: auto !important;
-      overflow: hidden !important;
-      position: relative !important;
     }
   </style>
 </head>
