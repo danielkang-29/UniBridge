@@ -1125,8 +1125,21 @@ function renderHome(defaultTab = "home") {
           ${t("chat.send")}
         </button>
       </div>
-      
     `;
+
+      // ✅ 이 아래에 붙이면 됨 (DOM이 이미 생성된 상태)
+      const sendBtn = document.getElementById("sendBtn");
+      const input = document.getElementById("chatInput");
+
+      if (sendBtn && input) {
+        sendBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (document.activeElement !== input) {
+            input.focus();
+          }
+          sendMessage(); // 네가 정의한 전송 함수
+        });
+      }
 
     // 이미지 미리보기 기능
     document.getElementById('imageInput').addEventListener('change', function(event) {
@@ -1198,7 +1211,6 @@ function renderHome(defaultTab = "home") {
       console.log("선택된 파일:", file); // 디버깅용
     });
 
-    const sendBtn = document.getElementById("sendBtn");
     sendBtn.onclick = async () => {
       const text = chatInput.value.trim();
       const file = imageInput.files[0];
