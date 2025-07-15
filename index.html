@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="UniBridge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <meta charset="UTF-8" />
@@ -376,8 +375,7 @@
     }
 
     #backNav {
-      flex-shrink: 0;
-      padding-top: env(safe-area-inset-top, 10px);
+      flex-shrink: 0
     }
 
     #imagePreview {
@@ -576,7 +574,6 @@
 
     #chatRoom {
       position: fixed;
-      inset: 0; /* top: 0; right: 0; bottom: 0; left: 0 한 번에 처리 */
       top: 0;
       bottom: 0;
       left: 0;
@@ -611,7 +608,7 @@
     #chatInputRow {
       position: relative;
       bottom: 0;
-      max-width: 393px !important;
+      max-width: none;
       max-height: 65px !important;
       background-color: #f5f5f5;
       padding: 10px 10px 10px 10px;
@@ -620,6 +617,8 @@
       align-items: center;
       gap: 8px;
       z-index: 10;
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
     }
 
     #chatInput {
