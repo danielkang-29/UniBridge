@@ -1200,23 +1200,19 @@ function renderHome(defaultTab = "home") {
 
     const sendBtn = document.getElementById("sendBtn");
 
-    let preventNextClick = false;
-
-    sendBtn.addEventListener("touchstart", (e) => {
-      preventNextClick = true; // 다음 클릭을 허용하려면 false여야 하지만 지금은 막고 있음
-      chatInput.focus();       // 포커스는 유지
+    sendBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault(); // 포커스 강제 유지
+      chatInput.focus();
     });
 
     sendBtn.addEventListener("click", async (e) => {
-      if (preventNextClick) {
-        e.preventDefault(); // 터치 이벤트에서의 클릭이면 막고
-        preventNextClick = false; // 다음부턴 통과
-        return; // → 클릭 동작 막음
-      }
-
+      e.preventDefault(); // 기본 동작 막기 (blur 방지)
+      
       const text = chatInput.value.trim();
       const file = imageInput.files[0];
       let imageUrl = null;
+
+      if (!text && !file) return;
 
       if (file) {
         const imagePath = `chatImages/${chatId}/${Date.now()}_${file.name}`;
@@ -1224,8 +1220,6 @@ function renderHome(defaultTab = "home") {
         await uploadBytes(imgRef, file);
         imageUrl = await getDownloadURL(imgRef);
       }
-
-      if (!text && !imageUrl) return;
 
       await addDoc(collection(db, "chats", chatId, "messages"), {
         sender: state.currentUserEmail,
@@ -1239,7 +1233,8 @@ function renderHome(defaultTab = "home") {
       imageInput.value = "";
       document.getElementById("imagePreview").style.display = 'none';
 
-      chatInput.focus(); // 포커스 다시 줘서 키보드 유지
+      // 키보드 유지
+      setTimeout(() => chatInput.focus(), 0);
     });
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
