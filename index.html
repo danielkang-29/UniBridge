@@ -15,19 +15,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <title>UniBridge</title>
 
-  <script>
+   <script>
     function setRealVh() {
-      const realVh = (window.visualViewport?.height || window.innerHeight) * 0.01;
-      document.documentElement.style.setProperty('--vh', `${realVh}px`);
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
 
     window.addEventListener('resize', setRealVh);
     window.addEventListener('orientationchange', setRealVh);
     window.addEventListener('load', setRealVh);
-    setRealVh();
+    setRealVh(); // 최초 실행
   </script>
-
-
+  
   <style>
     :root {
       --primary-color: #10b981; /* 에메랄드 그린 */
@@ -613,7 +612,6 @@
       flex: 1;
       overflow-y: auto;
       margin-top: 56px;
-      margin-bottom: 80px;
       padding: 10px;
       background-color: #f5f5f5;
       scrollbar-width: none;
@@ -621,7 +619,7 @@
     }
 
     #chatInputRow {
-      position: fixed;
+      position: relative;
       bottom: 0;
       max-width: 393px !important;
       background-color: #f5f5f5;
@@ -706,7 +704,7 @@
       @media screen and (max-device-width: 430px) and (-webkit-min-device-pixel-ratio: 2) {
         #chatInputRow {
           bottom: env(safe-area-inset-bottom);
-          padding-bottom: max(10px + env(safe-area-inset-bottom));
+          padding-bottom: calc(10px + env(safe-area-inset-bottom));
         }
       }
     }
