@@ -606,19 +606,25 @@
     }
 
     #chatInputRow {
-      position: relative;
+      position: fixed;
       bottom: 0;
-      max-width: none;
-      max-height: 65px !important;
+      left: 0;
+      right: 0;
+
+      width: 100%;
+      max-width: none; /* iPhone에서 깨짐 방지 */
+      box-sizing: border-box;
+
       background-color: #f5f5f5;
-      padding: 10px 10px 10px 10px;
-      border-top: 1px solid #d1d5db;
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
+      padding-top: 10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 하단 노치도 대응 */
+
       display: flex;
       align-items: center;
       gap: 8px;
       z-index: 10;
-      padding-left: calc(12px + env(safe-area-inset-left));
-      padding-right: calc(12px + env(safe-area-inset-right));
     }
 
     #chatInput {
