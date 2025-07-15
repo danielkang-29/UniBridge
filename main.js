@@ -1225,6 +1225,9 @@ function renderHome(defaultTab = "home") {
       imageInput.value = "";
 
       document.getElementById("imagePreview").style.display = 'none'; // 미리보기 이미지 숨기기
+
+      // ✅ 키보드 유지: 다시 focus
+      chatInput.focus();
     };
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
