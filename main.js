@@ -1233,6 +1233,13 @@ function renderHome(defaultTab = "home") {
 
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp"));
 
+    function scrollToBottom() {
+      const chatBox = document.getElementById("chatBox");
+      if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
     onSnapshot(q, (snapshot) => {
       chatBox.innerHTML = "";
 
@@ -1242,24 +1249,36 @@ function renderHome(defaultTab = "home") {
 
         const msgElem = document.createElement("div");
         msgElem.className = `chat-bubble ${msg.sender === state.currentUserEmail ? 'sent' : 'received'}`;
-        
+
+        const bubbleContent = document.createElement("div");
+        bubbleContent.className = "bubble-content";
+        bubbleContent.textContent = msg.text || "";
+
+        msgElem.appendChild(bubbleContent);
+
+        if (msg.imageUrl) {
+          const img = document.createElement("img");
+          img.src = msg.imageUrl;
+          img.style.maxWidth = "150px";
+          img.style.marginTop = "5px";
+          img.onload = scrollToBottom;  // ✅ 이미지 로드 후 스크롤
+
+          msgElem.appendChild(img);
+        }
+
         const timeElem = document.createElement("div");
         timeElem.className = "bubble-time";
         timeElem.textContent = formattedTime;
 
-        msgElem.innerHTML = `
-          <div class="bubble-content">${msg.text || ''}</div>
-          ${msg.imageUrl ? `<img src="${msg.imageUrl}" style="max-width:150px; margin-top:5px"/>` : ''}
-        `;
-        
-        // 메시지 외부에 시간 요소 추가
         msgElem.appendChild(timeElem);
 
-        chatBox.appendChild(msgElem);
+        chatBox.appendChild(msgElem); // ✅ 딱 한 번만!
       });
 
-      chatBox.scrollTop = chatBox.scrollHeight;
+      // 텍스트 메시지만 있는 경우도 아래로 스크롤
+      scrollToBottom();
 
+      // 읽음 처리
       snapshot.docs.forEach(docSnap => {
         const m = docSnap.data();
         if (m.sender !== state.currentUserEmail && !m.read) {
