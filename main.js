@@ -1122,6 +1122,17 @@ function renderHome(defaultTab = "home") {
       
     `;
 
+      if (backNav) {
+        backNav.style.position = "fixed";
+        backNav.style.top = "0";
+        backNav.style.left = "0";
+        backNav.style.right = "0";
+        backNav.style.zIndex = "1000"; // 항상 위에 고정
+        backNav.style.backgroundColor = "#f5f5f5"; // 밀릴 때 배경 보장
+        backNav.style.padding = "12px"; // 클릭 잘 되도록 여백
+      }
+
+
     // 이미지 미리보기 기능
     document.getElementById('imageInput').addEventListener('change', function(event) {
       const file = event.target.files[0];
