@@ -1200,18 +1200,20 @@ function renderHome(defaultTab = "home") {
 
     const sendBtn = document.getElementById("sendBtn");
 
-    // ✅ blur 방지 → 버튼을 클릭했을 때 focus 유지 (중요!)
-    sendBtn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      chatInput.focus(); // iOS: focus 유지 강제
-    }, { passive: false });  // 중요: passive: false 해야 preventDefault가 동작함
+    let preventNextClick = false;
 
-    sendBtn.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      chatInput.focus(); // desktop 대응
+    sendBtn.addEventListener("touchstart", (e) => {
+      preventNextClick = true; // 다음 클릭을 허용하려면 false여야 하지만 지금은 막고 있음
+      chatInput.focus();       // 포커스는 유지
     });
 
-    sendBtn.onclick = async () => {
+    sendBtn.addEventListener("click", async (e) => {
+      if (preventNextClick) {
+        e.preventDefault(); // 터치 이벤트에서의 클릭이면 막고
+        preventNextClick = false; // 다음부턴 통과
+        return; // → 클릭 동작 막음
+      }
+
       const text = chatInput.value.trim();
       const file = imageInput.files[0];
       let imageUrl = null;
@@ -1236,7 +1238,9 @@ function renderHome(defaultTab = "home") {
       chatInput.value = "";
       imageInput.value = "";
       document.getElementById("imagePreview").style.display = 'none';
-    };
+
+      chatInput.focus(); // 포커스 다시 줘서 키보드 유지
+    });
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
