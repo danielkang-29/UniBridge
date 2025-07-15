@@ -13,7 +13,20 @@
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <title>UniBridge 로그인 & 계정 생성</title>
+  <title>UniBridge</title>
+
+   <script>
+    function setRealVh() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    window.addEventListener('resize', setRealVh);
+    window.addEventListener('orientationchange', setRealVh);
+    window.addEventListener('load', setRealVh);
+    setRealVh(); // 최초 실행
+  </script>
+
   <style>
     :root {
       --primary-color: #10b981; /* 에메랄드 그린 */
@@ -588,7 +601,7 @@
       background-color: #f5f5f5;
       z-index: 50;
 
-      height: calc(var(--vh, 1vh) * 100);  /* 진짜 화면 높이 */
+      height: calc(var(--vh, 1vh) * 100); /* 기존 100vh보다 정확함 */
 
       box-sizing: border-box; /* ✅ 반드시 추가 */
       border-radius: 16px;
@@ -609,7 +622,6 @@
       position: relative;
       bottom: 0;
       max-width: 393px !important;
-      max-height: 65px !important;
       background-color: #f5f5f5;
       padding: 10px 10px 10px 10px;
       border-top: 1px solid #d1d5db;
@@ -692,7 +704,7 @@
       @media screen and (max-device-width: 430px) and (-webkit-min-device-pixel-ratio: 2) {
         #chatInputRow {
           bottom: env(safe-area-inset-bottom);
-          padding-bottom: calc(10px + env(safe-area-inset-bottom));
+          padding-bottom: max(10px + env(safe-area-inset-bottom));
         }
       }
     }
