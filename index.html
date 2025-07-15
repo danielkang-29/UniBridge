@@ -621,7 +621,8 @@
     #chatInputRow {
       position: relative;
       bottom: 0;
-      max-width: 393px !important;
+      width: 100%;
+      max-width: 369px;
       background-color: #f5f5f5;
       padding: 10px 10px 10px 10px;
       border-top: 1px solid #d1d5db;
@@ -629,11 +630,8 @@
       align-items: center;
       gap: 8px;
       z-index: 10;
-      padding-left: calc(12px + env(safe-area-inset-left));
-      padding-right: calc(12px + env(safe-area-inset-right));
-
-      /* ✅ 하단 홈 인디케이터 영역 보호 */
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      padding-left: 12px;
+      padding-right: 12px;
     }
 
     #chatInput {
