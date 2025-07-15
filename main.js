@@ -1103,8 +1103,8 @@ function renderHome(defaultTab = "home") {
         align-items: center;
         gap: 8px;
         margin: 10px auto 0 auto;
-        transform: translateX(5%);
-        width: 90%;
+        transform: translateX(3%);
+        width: 94%;
       ">
 
         <label for="imageInput" id="fileLabel" class="custom-file-label">
