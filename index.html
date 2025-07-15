@@ -46,8 +46,11 @@
     }
 
     html, body {
-      overscroll-behavior: none;
-      touch-action: manipulation;
+      overscroll-behavior: none !important;
+      touch-action: manipulation !important;
+      -webkit-overflow-scrolling: auto !important;
+      overflow: hidden !important;
+      position: relative !important;
     }
 
     body {
@@ -393,12 +396,12 @@
     }
 
     #backNav {
+      width: 354px !important;  
       position: fixed !important;
       top: 0;
       left: 50%;
       transform: translateX(-50%);
       width: 100%;
-      max-width: 393px !important;
       margin-top: 56px !important;
       height: 56px;
       display: flex;
@@ -661,7 +664,8 @@
     #chatInputRow {
       margin: 0 auto; 
       
-      width: 393px !important;  
+      width: 354px !important;  
+      margin-left: 19.5px !important;
       position: relative;
       bottom: 0 !important;
       max-width: 393px !important;
