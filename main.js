@@ -39,28 +39,15 @@ function initKeyboardGuardForBackNav() {
   window.addEventListener("load", updateNavPosition);
 }
 
+// 최상단에 onAuthStateChanged 유지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     state.currentUserEmail = user.email;
-
-    // 🔔 통화 수신 감지 로직 추가
-    const callDoc = doc(db, "calls", user.email);
-    onSnapshot(callDoc, async (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.offer && !data.answer) {
-          console.log("📞 통화 수신 감지됨:", data);
-          renderIncomingCallUI(data.offer, data.caller);  // ← 수신 UI 호출
-        }
-      }
-    });
-
-    // 유저 정보 가져오기
     const userSnap = await getDoc(doc(db, "users", user.email));
     if (userSnap.exists()) {
       state.currentUserData = userSnap.data();
 
-      // DOM 준비 후 renderHome 호출
+      // DOM이 준비됐는지 체크해서 준비 안 됐으면 기다리기
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
           renderHome();
@@ -68,25 +55,7 @@ onAuthStateChanged(auth, async (user) => {
       } else {
         renderHome();
       }
-
-      // ✅ [여기에 삽입!] 수신 감지용 onSnapshot
-      onSnapshot(
-        query(collection(db, "calls"), where("callee", "==", state.currentUserEmail)),
-        (snapshot) => {
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const callData = change.doc.data();
-              const callId = change.doc.id;
-
-              console.log("📞 통화 수신 감지됨:", callData);
-              renderIncomingCallUI(callId, callData); // ✅ 순서: callId 먼저, data 나중
-            }
-          });
-        }
-      );
-
     } else {
-      // 유저 정보 없을 경우 로그인 화면으로
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
           renderLogin();
@@ -95,9 +64,7 @@ onAuthStateChanged(auth, async (user) => {
         renderLogin();
       }
     }
-
   } else {
-    // 로그인되지 않은 상태 → 로그인 화면
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () => {
         renderLogin();
@@ -1099,30 +1066,6 @@ function renderHome(defaultTab = "home") {
 
     backNav.appendChild(name);
 
-    // 📞 통화 버튼 상단바에 추가
-    const callBtn = document.createElement("button");
-    callBtn.id = "callBtn";
-    callBtn.textContent = "Call";
-    callBtn.dataset.calling = "false";
-    callBtn.style.cssText = `
-      position: absolute;
-      top: -10px;
-      right: 5px;
-      width: 2em;
-      height: 2em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: bold;
-      border: none;
-      background: none;
-      color: #10b981;
-      cursor: pointer;
-      margin: 0;
-    `;
-    backNav.appendChild(callBtn);
-
     homeContent.innerHTML = `
     <div id="chatRoom" style="display: flex; flex-direction: column; height: 100dvh; padding-top: 41px;">
       <div id="callStatus" style="display:none; color:green; font-weight:bold;">
@@ -1221,17 +1164,20 @@ function renderHome(defaultTab = "home") {
     const backBtn = document.getElementById("backBtn");
     if (backBtn) backBtn.onclick = () => renderChatTab();
 
-    callBtn.onclick = async () => {
-      if (callBtn.dataset.calling === "true") {
-        await endCall(callId);
-        callBtn.textContent = t("chat.call");
-        callBtn.dataset.calling = "false";
-      } else {
-        await startCall(partnerEmail);
-        callBtn.textContent = t("chat.endCall");
-        callBtn.dataset.calling = "true";
-      }
-    };
+    const callBtn = document.getElementById("callBtn");
+    if (callBtn) {
+      callBtn.onclick = async () => {
+        if (callBtn.dataset.calling === "true") {
+          await endCall(callId);
+          callBtn.textContent = t("chat.call");
+          callBtn.dataset.calling = "false";
+        } else {
+          await startCall(partnerEmail);
+          callBtn.textContent = t("chat.endCall");
+          callBtn.dataset.calling = "true";
+        }
+      };
+    }
 
     const chatBox = document.getElementById("chatBox");
     chatBox.style.marginTop = "41px"; // ✅ 상단 고정바에 가려지지 않게 여백 확보
@@ -1413,73 +1359,51 @@ function renderHome(defaultTab = "home") {
 
   async function startCall(calleeEmail) {
     state.currentCallPartnerEmail = calleeEmail;
-
-    // ✅ 발신자 이메일 확인 로그
-    console.log("📞 발신자 이메일:", state.currentUserEmail);
-
-    // 🔊 마이크 스트림
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // 📡 Peer 연결 설정
     peerConnection = new RTCPeerConnection(servers);
 
-    // 🔗 로컬 트랙 추가
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
     });
 
+    // ✅ 통화 녹음 시작
     startRecording(localStream);
 
-    // ✅ 상대방 email을 문서 ID로 사용
-    const callDoc = doc(db, "calls", calleeEmail); // 수신자 이메일 기반 문서 ID
-    const callerCandidates = collection(callDoc, "callerCandidates");
+    callId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    callDoc = doc(collection(db, "calls"), callId);
 
-    // ICE 후보 수집
-    peerConnection.onicecandidate = (e) => {
+    const callerCandidates = collection(callDoc, "callerCandidates");
+    peerConnection.onicecandidate = e => {
       if (e.candidate) {
         setDoc(doc(callerCandidates), e.candidate.toJSON());
       }
     };
 
-    // 📞 Offer 생성
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
-    // ✅ callData는 딱 한 번만 선언!
-    const callData = {
+    await setDoc(callDoc, {
       caller: state.currentUserEmail,
       callee: calleeEmail,
-      offer: offer,
-      status: "calling",
-      timestamp: serverTimestamp()
-    };
+      offer,
+      status: "calling"
+    });
 
-    // 전체 정보 저장 (callee 기준)
-    await setDoc(callDoc, callData);
-
-    // (선택) 본인 이메일 기준으로도 저장
-    await setDoc(doc(db, "calls", state.currentUserEmail), callData);
-
-    // 응답 감시
     onSnapshot(callDoc, async (snapshot) => {
       const data = snapshot.data();
-      console.log("📞 데이터 확인", data);  // 이 로그에 caller가 없으면 위에서 잘못 저장된 것
       if (peerConnection && !peerConnection.currentRemoteDescription && data?.answer) {
         const answerDesc = new RTCSessionDescription(data.answer);
         await peerConnection.setRemoteDescription(answerDesc);
       }
     });
 
-    // 상대 트랙 수신 처리
     peerConnection.ontrack = (e) => {
       document.getElementById("remoteAudio").srcObject = e.streams[0];
       document.getElementById("callStatus").style.display = "block";
 
-      // ⏱️ 통화 타이머 시작
+      // ✅ 타이머 시작
       startCallTimer();
     };
-
-    console.log("📞 통화 요청 전송 완료:", calleeEmail);
   }
 
   function renderProfileTab() {
@@ -2293,10 +2217,6 @@ function listenForIncomingCalls() {
 
 // --- 수신자 통화 수락/거절 화면 ---
 function renderIncomingCallUI(data, callId) {
-
-  console.log("callId:", callId);
-  console.log("data:", data);
-  console.log("data.caller:", data?.caller); // 이게 undefined라면 문제가 있는 거야
   const container = document.getElementById("app");
         container.innerHTML = `
           <div style="padding: 20px; text-align: center;">
@@ -2321,157 +2241,120 @@ function renderIncomingCallUI(data, callId) {
       }
 
       async function answerCall(callId, data) {
-
-        if (!data) {
-          console.error("❌ data is undefined in answerCall");
-          return;
-        }
-
-        if (!data.caller) {
-          console.error("❌ data.caller is undefined");
-          return;
-        }
-
-        console.log("📞 수신자 화면 answerCall 호출됨:", callId, data);
-
-        const callerEmail = data?.caller;
-
-        if (!callerEmail) {
-          console.error("❌ callerEmail is undefined");
-          return;
-        }
-
-        state.currentCallPartnerEmail = callerEmail;
-
-        // 🔊 내 오디오 스트림 가져오기
+        state.currentCallPartnerEmail = data.caller;
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         peerConnection = new RTCPeerConnection(servers);
 
-        // 🔗 오디오 트랙 추가
+        // 내 오디오 트랙 추가
         localStream.getTracks().forEach(track => {
           peerConnection.addTrack(track, localStream);
         });
 
-        // 🎙️ 통화 녹음 시작
+        // ✅ 통화 녹음 시작
         startRecording(localStream);
 
         const callDoc = doc(db, "calls", callId);
         const calleeCandidates = collection(callDoc, "calleeCandidates");
 
-        // 📡 ICE 후보 송신
         peerConnection.onicecandidate = e => {
           if (e.candidate) {
             setDoc(doc(calleeCandidates), e.candidate.toJSON());
           }
         };
 
-        // 📥 상대의 offer 설정
+        // 상대 offer 설정
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-        // 📤 내 answer 생성
+        // 내 answer 생성
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
 
-        // ☁️ Firestore에 answer 저장
+        // Firestore에 저장
         await setDoc(callDoc, {
           answer,
           status: "inCall"
         }, { merge: true });
 
-        // 📲 상대 오디오 수신
+        // 상대 트랙 수신 시 오디오 출력
         peerConnection.ontrack = (e) => {
           const audio = document.createElement("audio");
           audio.srcObject = e.streams[0];
           audio.autoplay = true;
-          document.body.appendChild(audio);
+          document.body.appendChild(audio); // 혹은 채팅 UI에 삽입
 
-          // ⏱️ 통화 타이머 시작
+          // ✅ 타이머 시작
           startCallTimer();
 
-          // 📴 상단 call 버튼 상태 변경
           const callBtn = document.getElementById("callBtn");
           if (callBtn) {
-            callBtn.textContent = "📴";
+            callBtn.textContent = "📴 통화 종료";
             callBtn.dataset.calling = "true";
           }
         };
 
-        // 🛑 통화 종료 버튼 추가
+        // answerCall 함수 안에서 통화 종료 버튼 추가 시
         const endBtn = document.createElement("button");
-        endBtn.innerText = "📴";
-        endBtn.id = "endCallBtn";
+        endBtn.innerText = "📴 통화 종료";
+        endBtn.id = "endCallBtn"; // ✅ 이 줄 추가
         endBtn.style.position = "fixed";
         endBtn.style.bottom = "20px";
         endBtn.style.right = "20px";
         endBtn.style.zIndex = "1000";
-        endBtn.style.backgroundColor = "#ef4444";
-        endBtn.style.color = "white";
-        endBtn.style.border = "none";
-        endBtn.style.padding = "10px 14px";
-        endBtn.style.borderRadius = "999px";
-        endBtn.style.fontSize = "16px";
-        endBtn.style.cursor = "pointer";
         endBtn.onclick = () => endCall(callId);
         document.body.appendChild(endBtn);
 
-        // 상태 동기화
-        state.incomingCallHandled = true;
+        state.incomingCallHandled = false;
       }
 
       async function endCall(callId) {
-        try {
-          // ⏹️ 통화 타이머 중지
-          if (typeof stopCallTimer === "function") stopCallTimer();
+        // ✅ 타이머 멈추기
+        stopCallTimer();
 
-          // 🎙️ 녹음 멈추기
-          if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-          }
+        // ✅ 녹음 멈추기
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
 
-          // 🔌 피어 연결 종료
-          if (peerConnection) {
-            peerConnection.close();
-            peerConnection = null;
-          }
+        // 1. 피어 연결 종료
+        if (peerConnection) {
+          peerConnection.close();
+          peerConnection = null;
+        }
 
-          // 🔇 로컬 오디오 스트림 정지
-          if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
-          }
+        // 2. 오디오 스트림 정지
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+          localStream = null;
+        }
 
-          // ☁️ Firebase에서 통화 상태 업데이트
-          if (callId) {
-            await setDoc(doc(db, "calls", callId), { status: "ended" }, { merge: true });
-          }
+        // 3. Firebase에서 통화 상태 업데이트
+        await setDoc(doc(db, "calls", callId), { status: "ended" }, { merge: true });
 
-          // 📴 통화 종료 버튼 제거
-          const endBtn = document.getElementById("endCallBtn");
-          if (endBtn) endBtn.remove();
+        // 4. 통화 종료 버튼 제거
+        const endBtn = document.getElementById("endCallBtn");
+        if (endBtn) endBtn.remove();
 
-          // 🔈 수신 오디오 제거
-          const audioEls = document.querySelectorAll("audio");
-          audioEls.forEach(audio => audio.remove());
+        // 5. 오디오 엘리먼트 초기화
+        const audio = document.querySelector("audio");
+        if (audio) audio.remove(); // 또는 remoteAudio 엘리먼트 초기화:
+        const remoteAudio = document.getElementById("remoteAudio");
+        if (remoteAudio) remoteAudio.srcObject = null;
 
-          const remoteAudio = document.getElementById("remoteAudio");
-          if (remoteAudio) remoteAudio.srcObject = null;
+        // 6. 통화 상태 메시지 숨기기
+        const statusEl = document.getElementById("callStatus");
+        if (statusEl) statusEl.style.display = "none";
 
-          // 💬 통화 상태 텍스트 숨기기
-          const statusEl = document.getElementById("callStatus");
-          if (statusEl) statusEl.style.display = "none";
+        // 7. 타이머 정지 (있는 경우)
+        if (typeof stopCallTimer === "function") stopCallTimer();
 
-          // 📞 상단 call 버튼 초기화
-          const callBtn = document.getElementById("callBtn");
-          if (callBtn) {
-            callBtn.textContent = "📞";
-            callBtn.dataset.calling = "false";
-          }
+        // 8. 알림
+        alert("통화가 종료되었습니다.");
 
-          // ✅ 알림
-          alert("통화가 종료되었습니다.");
-        } catch (err) {
-          console.error("❌ 통화 종료 중 오류:", err);
-          alert("통화 종료 중 오류가 발생했습니다.");
+        // callBtn 상태 되돌리기
+        const callBtn = document.getElementById("callBtn");
+        if (callBtn) {
+          callBtn.textContent = "📞 전화 걸기";
+          callBtn.dataset.calling = "false";
         }
       }
 
