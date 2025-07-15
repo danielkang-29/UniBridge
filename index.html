@@ -46,10 +46,9 @@
     }
 
     html, body {
-      overscroll-behavior: none !important;
+      overscroll-behavior: contain !important;  /* 바운스 막음 */
       touch-action: manipulation !important;
-      -webkit-overflow-scrolling: auto !important;
-      overflow: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
       position: relative !important;
     }
 
@@ -792,13 +791,15 @@
       import { renderLogin } from './auth.js';
       import './main.js';
 
-      document.addEventListener("DOMContentLoaded", () => {
-        document.addEventListener('touchmove', function (e) {
-          if (!e.target.closest('#chatBox')) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-      });
+      document.addEventListener('touchmove', function (e) {
+        const isInsideChatBox = e.target.closest('#chatBox');
+        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
+        // chatBox 안이거나 입력창이면 통과, 나머지는 prevent
+        if (!isInsideChatBox && !isInput) {
+          e.preventDefault();
+        }
+      }, { passive: false });
     </script>
   </body>
 </html>
