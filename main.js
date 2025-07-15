@@ -1099,12 +1099,10 @@ function renderHome(defaultTab = "home") {
       </div>
 
       <div id="chatInputRow" style="
+        position: fixed;
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: auto;
-        transform: translateX(3%);
-        width: 94%;
       ">
 
         <label for="imageInput" id="fileLabel" class="custom-file-label">
