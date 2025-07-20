@@ -218,8 +218,8 @@ const i18n = {
       rejected: "통화를 거절했습니다.",
       ended: "통화가 종료되었습니다.",
       inProgress: "통화 중...",
-      end: "📴 통화 종료",
-      start: "📞 전화 걸기"
+      end: "📴",
+      start: "Call"
     },
     label: {
       age: "나이",
@@ -287,8 +287,8 @@ const i18n = {
     chat: {
       chat: "채팅",
       title: "{nickname}님과의 채팅",
-      call: "📞 전화 걸기",
-      endCall: "📴 통화 종료",
+      call: "Call",
+      endCall: "End Call",
       inCall: "통화 중...",
       inputPlaceholder: "메시지 입력",
       send: "보내기",
@@ -429,8 +429,8 @@ const i18n = {
       rejected: "Call was declined.",
       ended: "Call ended.",
       inProgress: "On a call...",
-      end: "📴 End Call",
-      start: "📞 Start Call"
+      end: "📴",
+      start: "Call"
     },
     label: {
       age: "Age",
@@ -498,8 +498,8 @@ const i18n = {
     chat: {
       chat: "Chat",
       title: "Chat with {nickname}",
-      call: "📞 Start Call",
-      endCall: "📴 End Call",
+      call: "Call",
+      endCall: "End Call",
       inCall: "On a call...",
       inputPlaceholder: "Type your message here",
       send: "Send",
@@ -640,8 +640,8 @@ const i18n = {
       rejected: "通話を拒否しました。",
       ended: "通話が終了しました。",
       inProgress: "通話中…",
-      end: "📴 通話終了",
-      start: "📞 通話を始める"
+      end: "📴",
+      start: "Call"
     },
     label: {
       age: "年齢",
@@ -709,8 +709,8 @@ const i18n = {
     chat: {
       chat: "チャット",
       title: "{nickname}さんとのチャット",
-      call: "📞 通話を始める",
-      endCall: "📴 通話終了",
+      call: "Call",
+      endCall: "End Call",
       inCall: "通話中…",
       inputPlaceholder: "メッセージを入力してください",
       send: "送信",
@@ -851,8 +851,8 @@ const i18n = {
       rejected: "你已拒绝通话",
       ended: "通话已结束",
       inProgress: "通话中…",
-      end: "📴 结束通话",
-      start: "📞 发起通话"
+      end: "📴",
+      start: "Call"
     },
     label: {
       age: "年龄",
@@ -920,8 +920,8 @@ const i18n = {
     chat: {
       chat: "聊天",
       title: "与你和 {nickname} 的聊天",
-      call: "📞 发起通话",
-      endCall: "📴 结束通话",
+      call: "Call",
+      endCall: "End Call",
       inCall: "通话中…",
       inputPlaceholder: "输入你的消息吧",
       send: "发送",
@@ -1006,7 +1006,7 @@ const signupQuestions = [
     "mbti.ISTJ","mbti.ISFJ","mbti.ISTP","mbti.ISFP",
     "mbti.ESTJ","mbti.ESFJ","mbti.ESTP","mbti.ESFP"
   ]},
-  { id: 6, textKey: "signup.q6", type: "multi", options: ["personality.extrovert", "personality.precise", "personality.honest"] },
+  { id: 6, textKey: "signup.q6", type: "multi", options: ["personality.extrovert", "personality.introvert", "personality.precise", "personality.honest"] },
   { id: 7, textKey: "signup.q7", type: "single", options: ["frequency.never", "frequency.sometimes", "frequency.often", "frequency.always"] },
   { id: 8, textKey: "signup.q8", type: "multi", options: ["purpose.language", "purpose.friend", "purpose.info"] },
 ];
@@ -1098,50 +1098,207 @@ function renderSignupQuestion() {
       state.signupAnswers[q.id] = q.type === "number" ? Number(input.value) : input.value;
     };
     container.appendChild(input);
-  } else if (q.type === "select") {
-    const select = document.createElement("select");
-    select.innerHTML = `<option value="">${t("common.selectPlaceholder")}</option>` +
-      q.options.map(opt => `<option value="${opt}">${t(opt)}</option>`).join("");
-    select.value = state.signupAnswers[q.id] || "";
-    select.onchange = () => {
-      state.signupAnswers[q.id] = select.value;
-    };
-    container.appendChild(select);
+    } else if (q.type === "select") {
+    // 특별히 학교 선택일 때만 버튼 방식으로 표시
+    if (q.id === 2) {
+      const grid = document.createElement("div");
+      grid.style.display = "grid";
+      grid.style.gridTemplateColumns = "1fr 1fr";
+      grid.style.gap = "12px";
+      grid.style.marginBottom = "20px";
+
+      q.options.forEach(opt => {
+        const button = document.createElement("button");
+        button.textContent = t(opt);
+        button.style.width = "100%";
+        button.style.padding = "12px";
+        button.style.fontSize = "16px";
+        button.style.background = "#ffffff";
+        button.style.color = "#10b981";
+        button.style.border = "2px solid #6ee7b7";
+        button.style.borderRadius = "8px";
+        button.style.cursor = "pointer";
+        button.style.transition = "background-color 0.2s, color 0.2s";
+
+        button.onmouseover = () => {
+        button.style.backgroundColor = "#ecfdf5";  // 연한 초록 배경
+      };
+      button.onmouseout = () => {
+        button.style.backgroundColor = "#ffffff";
+        button.style.color = "#10b981";
+      };
+
+        button.onclick = () => {
+          state.signupAnswers[q.id] = opt;
+          state.signupStep++;
+          renderSignupQuestion();
+        };
+
+        grid.appendChild(button);
+      });
+
+      container.appendChild(grid);
+    } else {
+      // 나머지 select 항목은 기존대로
+      const select = document.createElement("select");
+      select.innerHTML = `<option value="">${t("common.selectPlaceholder")}</option>` +
+        q.options.map(opt => `<option value="${opt}">${t(opt)}</option>`).join("");
+      select.value = state.signupAnswers[q.id] || "";
+      select.onchange = () => {
+        state.signupAnswers[q.id] = select.value;
+      };
+
+      select.style.width = "100%";
+      select.style.padding = "12px";
+      select.style.border = "2px solid #42c7bc";
+      select.style.borderRadius = "12px";
+      select.style.fontSize = "16px";
+      select.style.fontFamily = "inherit";
+      select.style.boxSizing = "border-box";
+      select.style.backgroundColor = "#fff";
+      select.style.lineHeight = "1.6";
+      select.style.transition = "border-color 0.3s, box-shadow 0.3s";
+      select.style.outline = "none";
+      select.style.marginBottom = "20px";
+
+      container.appendChild(select);
+    }
   } else if (q.type === "multi") {
     const selected = state.signupAnswers[q.id] || [];
-    q.options.forEach(opt => {
-      const label = document.createElement("label");
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = selected.includes(opt);
-      checkbox.onclick = () => {
-        if (checkbox.checked) {
-          selected.push(opt);
-        } else {
-          const idx = selected.indexOf(opt);
-          if (idx > -1) selected.splice(idx, 1);
-        }
-        state.signupAnswers[q.id] = selected;
-      };
-      label.appendChild(checkbox);
-      label.append(" " + t(opt));
-      container.appendChild(label);
-    });
+
+      if (q.id === 6) {
+        // 성격 질문: 2x2 버튼 그리드
+        const grid = document.createElement("div");
+        grid.style.display = "grid";
+        grid.style.gridTemplateColumns = "1fr 1fr";
+        grid.style.gap = "12px";
+        grid.style.marginBottom = "20px";
+
+        q.options.forEach(opt => {
+          const button = document.createElement("button");
+          button.textContent = t(opt);
+
+          const isSelected = selected.includes(opt);
+          const baseBg = isSelected ? "#ecfdf5" : "#ffffff";
+          const baseColor = "#10b981";
+
+          // 기본 스타일
+          button.style.width = "100%";
+          button.style.padding = "12px";
+          button.style.fontSize = "16px";
+          button.style.background = baseBg;
+          button.style.color = baseColor;
+          button.style.border = "2px solid #6ee7b7";
+          button.style.borderRadius = "8px";
+          button.style.cursor = "pointer";
+          button.style.transition = "background-color 0.2s, color 0.2s";
+
+          button.onmouseover = () => {
+            button.style.backgroundColor = "#ecfdf5";
+          };
+          button.onmouseout = () => {
+            button.style.backgroundColor = selected.includes(opt) ? "#ecfdf5" : "#ffffff";
+            button.style.color = baseColor;
+          };
+
+          button.onclick = () => {
+            const idx = selected.indexOf(opt);
+            if (idx > -1) {
+              selected.splice(idx, 1);
+            } else {
+              selected.push(opt);
+            }
+            state.signupAnswers[q.id] = [...selected];
+            renderSignupQuestion(); // 다시 렌더링해서 선택 상태 반영
+          };
+
+          grid.appendChild(button);
+        });
+
+        container.appendChild(grid);
+      } else {
+      q.options.forEach(opt => {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = selected.includes(opt);
+        checkbox.onclick = () => {
+          if (checkbox.checked) {
+            selected.push(opt);
+          } else {
+            const idx = selected.indexOf(opt);
+            if (idx > -1) selected.splice(idx, 1);
+          }
+          state.signupAnswers[q.id] = selected;
+        };
+        label.appendChild(checkbox);
+        label.append(" " + t(opt));
+        container.appendChild(label);
+      });
+    }
   } else if (q.type === "single") {
     const selected = state.signupAnswers[q.id] || "";
-    q.options.forEach(opt => {
-      const label = document.createElement("label");
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "singleAnswer";
-      radio.checked = selected === opt;
-      radio.onclick = () => {
-        state.signupAnswers[q.id] = opt;
-      };
-      label.appendChild(radio);
-      label.append(" " + t(opt));
-      container.appendChild(label);
-    });
+
+    if (q.id === 7) {
+      // 연락 빈도: 2x2 버튼 UI
+      const grid = document.createElement("div");
+      grid.style.display = "grid";
+      grid.style.gridTemplateColumns = "1fr 1fr";
+      grid.style.gap = "12px";
+      grid.style.marginBottom = "20px";
+
+      q.options.forEach(opt => {
+        const button = document.createElement("button");
+        button.textContent = t(opt);
+
+        const isSelected = selected === opt;
+        const baseBg = isSelected ? "#ecfdf5" : "#ffffff";
+        const baseColor = "#10b981"; // ✅ 고정된 글자색
+
+        // 기본 스타일
+        button.style.width = "100%";
+        button.style.padding = "12px";
+        button.style.fontSize = "16px";
+        button.style.background = baseBg;
+        button.style.color = baseColor;
+        button.style.border = "2px solid #6ee7b7";
+        button.style.borderRadius = "8px";
+        button.style.cursor = "pointer";
+        button.style.transition = "background-color 0.2s";
+
+        // hover 배경만
+        button.onmouseover = () => {
+          button.style.backgroundColor = "#ecfdf5";
+        };
+        button.onmouseout = () => {
+          button.style.backgroundColor = (state.signupAnswers[q.id] === opt) ? "#ecfdf5" : "#ffffff";
+        };
+
+        button.onclick = () => {
+          state.signupAnswers[q.id] = opt;
+          renderSignupQuestion(); // 다시 렌더링해서 반영
+        };
+
+        grid.appendChild(button);
+      });
+
+      container.appendChild(grid);
+    } else {
+      // 기본 라디오 버튼 방식
+      q.options.forEach(opt => {
+        const label = document.createElement("label");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "singleAnswer";
+        radio.checked = selected === opt;
+        radio.onclick = () => {
+          state.signupAnswers[q.id] = opt;
+        };
+        label.appendChild(radio);
+        label.append(" " + t(opt));
+        container.appendChild(label);
+      });
+    }
   }
 
   const btnNext = document.createElement("button");
@@ -1165,16 +1322,30 @@ function renderSignupQuestion() {
   };
   container.appendChild(btnNext);
 
-  if (state.signupStep > 0) {
-    const btnBack = document.createElement("button");
-    btnBack.textContent = t("common.back");
-    btnBack.onclick = () => {
+  const btnBack = document.createElement("button");
+  btnBack.textContent = t("common.back");
+
+  btnBack.style.width = "100%";
+  btnBack.style.padding = "12px";
+  btnBack.style.fontSize = "16px";
+  btnBack.style.background = "#ffffff";
+  btnBack.style.color = "#10b981";
+  btnBack.style.border = "2px solid #6ee7b7";
+  btnBack.style.borderRadius = "8px";
+
+  btnBack.onclick = () => {
+    if (state.signupStep === 0) {
+      // 첫 번째 질문에서 뒤로 가면 로그인 화면으로
+      renderLogin();
+    } else {
       state.signupStep--;
       renderSignupQuestion();
-    };
-    container.appendChild(btnBack);
-  }
+    }
+  };
+
+  container.appendChild(btnBack);
 }
+
 
 
 // --- 회원가입 최종 저장 ---
@@ -1195,6 +1366,15 @@ async function renderSignupFinal() {
     state.signupStep = signupQuestions.length - 1;
     renderSignupQuestion();
   };
+
+  const btnBack = document.getElementById("backToSignupBtn");
+  btnBack.style.width = "100%";
+  btnBack.style.padding = "12px";
+  btnBack.style.fontSize = "16px";
+  btnBack.style.background = "#ffffff";
+  btnBack.style.color = "#10b981";
+  btnBack.style.border = "2px solid #6ee7b7";
+  btnBack.style.borderRadius = "8px";
 }
 
 async function saveAccount() {
