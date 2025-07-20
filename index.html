@@ -664,11 +664,11 @@
     #chatInputRow {
       margin: 0 auto; 
       
-      width: 354px !important;  
+      width: calc(100% - 39px) !important;   /* ← 좌우 여백 강제 확보 */ 
       margin-left: 19.5px !important;
       position: relative;
       bottom: 0 !important;
-      max-width: 393px !important;
+      max-width: 354px !important;
       box-sizing: border-box; 
       background-color: #f5f5f5;
       padding: 10px 0 !important;
@@ -678,6 +678,7 @@
       gap: 8px;
       z-index: 10;
       padding: 12px;
+      overflow-x: hidden;
     }
 
     #chatInput {
