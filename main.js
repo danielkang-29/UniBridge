@@ -664,7 +664,7 @@ function renderHome(defaultTab = "home") {
 
     if (!candidates.length) {
       homeContent.innerHTML = `
-        <h2>${t("match")}</h2>
+        <h2></h2>
         <p>${t("match.noCandidates")}</p>
       `;
       const matchNewBadge = document.getElementById("matchNewBadge");
@@ -682,7 +682,7 @@ function renderHome(defaultTab = "home") {
         renderAcceptedCandidate();
       } else {
         homeContent.innerHTML = `
-          <h2>${t("match")}</h2>
+          <h2></h2>
           <p>${t("match.noCandidates")}</p>
         `;
         const matchNewBadge = document.getElementById("matchNewBadge");
