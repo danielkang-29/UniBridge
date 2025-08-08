@@ -1619,9 +1619,9 @@ const i18n = {
       waiting: "已保存你的请求，请耐心等待对方回复"
     },
     school: {
-      snu: "韩国首尔大学",
+      snu: "首尔大学",
       pku: "北京大学",
-      rikkyo: "日本立教大学",
+      rikkyo: "立教大学",
       nus: "新加坡国立大学"
     },
     major : {
