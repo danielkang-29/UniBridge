@@ -698,7 +698,7 @@ function renderHome(defaultTab = "home") {
       <div class="basic-info">
         <p><strong>${t("profile.age")}</strong>: ${u.age ?? '-'}</p>
         <p><strong>${t("profile.school")}</strong>: ${t(u.school ?? '-')}</p>
-        <p><strong>${t("profile.major")}</strong>: ${u.major ?? '-'}</p>
+        <p><strong>${t("profile.major")}</strong>: ${t(u.major ?? '-')}</p>
         <p><strong>${t("profile.mbti")}</strong>: ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '')}`) : '-'}</p>
         <p><strong>${t("profile.personality")}</strong>: ${(u.personality || []).map(p => t(p)).join(', ')}</p>
         <p><strong>${t("profile.purpose")}</strong>: ${(u.purpose || []).map(p => t(p)).join(', ')}</p>
@@ -1650,7 +1650,7 @@ function renderHome(defaultTab = "home") {
             <div class="my-info" style="margin-top: 21px;">
               <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
               <p><strong>${t("profile.school")}</strong> ${t(u.school ?? '-')}</p>
-              <p><strong>${t("profile.major")}</strong> ${u.major ?? '-'}</p>
+              <p><strong>${t("profile.major")}</strong> ${t(u.major ?? '-')}</p>
               <p><strong>${t("profile.mbti")}</strong> ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
               <p><strong>${t("profile.personality")}</strong> ${(u.personality || []).map(p => t(p)).join(', ')}</p>
               <p><strong>${t("profile.purpose")}</strong> ${(u.purpose || []).map(p => t(p)).join(', ')}</p>
@@ -1973,7 +1973,7 @@ export function renderCurrentMatchStep() {
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
         <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
-        <p><strong>${t("profile.major")}: </strong> ${candidate.major}</p>
+        <p><strong>${t("profile.major")}: </strong> ${t(candidate.major)}</p>
         <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
         <p><strong>${t("profile.personality")}: </strong> ${Array.isArray(candidate.personality) ? candidate.personality.map(p => t(p)).join(", ") : t(candidate.personality)}</p>
         <p><strong>${t("profile.purpose")}: </strong> ${Array.isArray(candidate.purpose) ? candidate.purpose.map(p => t(p)).join(", ") : t(candidate.purpose)}</p>
@@ -2155,7 +2155,7 @@ function renderMatchCandidate() {
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
         <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
-        <p><strong>${t("profile.major")}: </strong> ${candidate.major}</p>
+        <p><strong>${t("profile.major")}: </strong> ${t(candidate.major)}</p>
         <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
         <p><strong>${t("profile.personality")}: </strong> ${Array.isArray(candidate.personality) ? candidate.personality.map(p => t(p)).join(", ") : t(candidate.personality)}</p>
         <p><strong>${t("profile.purpose")}: </strong> ${Array.isArray(candidate.purpose) ? candidate.purpose.map(p => t(p)).join(", ") : t(candidate.purpose)}</p>
