@@ -1,5 +1,5 @@
 import { db, auth }            from './firebase.js';
-import { collection, getDoc, getDocs, query, orderBy, doc, setDoc, onSnapshot, serverTimestamp, getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { collection, getDoc, getDocs, query, orderBy, doc, setDoc, onSnapshot, serverTimestamp, getFirestore, getDocFromServer, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
   setPersistence,
@@ -2808,19 +2808,14 @@ async function saveAccount() {
       password: password,
       bio: "" // 자기소개 필드 기본값 추가
     });
+    await waitForPendingWrites(db);
+    const freshSnap = await getDocFromServer(userRef);
+    const u = freshSnap.exists() ? freshSnap.data() : {};
+    state.currentUserEmail = email;
+    state.currentUserData  = u;
+
     const nickname = state.signupAnswers[0]; // 닉네임 위치에 따라 인덱스 조정 필요
     alert(t("alert.signupSuccess", { name: nickname }));
-    state.currentUserEmail = email;
-    state.currentUserData = {
-      age: state.signupAnswers[1],
-      school: state.signupAnswers[2],
-      major: state.signupAnswers[3],
-      region: state.signupAnswers[4],
-      mbti: state.signupAnswers[5],
-      personality: state.signupAnswers[6],
-      contactFrequency: state.signupAnswers[7],
-      purpose: state.signupAnswers[8],
-    };
     window.renderHome();
   } catch (error) {
     alert(t("alert.signupError", { error: error.message }));
