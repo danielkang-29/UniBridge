@@ -479,11 +479,6 @@ function renderHome(defaultTab = "home") {
       </button>
     `;
 
-    // ✅ 하단바 여백 강화 + iOS 안전영역 대응
-    bottomBar.style.padding = `10px 10px calc(env(safe-area-inset-bottom, 0px) + 28px)`;
-    // (옵션) 혹시나 콘텐츠가 눌리면 최소 높이도 살짝 보강
-    bottomBar.style.minHeight = `calc(48px + env(safe-area-inset-bottom, 0px))`;
-
     document.getElementById("matchBtn").onclick = () => {
       state.matchStep = 0;
       state.matchAnswers = {};
