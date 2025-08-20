@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
-    document.getElementById("splash").style.display = "none";
-    document.getElementById("app").style.display = "block";
+    const splash = document.getElementById("splash");
+    const app = document.getElementById("app");
+    if (splash) splash.style.display = "none";
+    if (app) app.style.display = "block";
   }, 1500);
 });
 
@@ -49,18 +51,6 @@ function initKeyboardGuardForBackNav() {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     state.currentUserEmail = user.email;
-
-    // 🔔 통화 수신 감지 로직 추가
-    const callDoc = doc(db, "calls", user.email);
-    onSnapshot(callDoc, async (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.offer && !data.answer) {
-          console.log("📞 통화 수신 감지됨:", data);
-          renderIncomingCallUI(data.offer, data.caller);  // ← 수신 UI 호출
-        }
-      }
-    });
 
     // 유저 정보 가져오기
     const userSnap = await getDoc(doc(db, "users", user.email));
@@ -458,8 +448,17 @@ function renderHome(defaultTab = "home") {
   function renderHomeTab() {
     const homeContent = document.getElementById("homeContent");
     homeContent.innerHTML = `
-      <h2>${t("home.title")}</h2>
-      <p>${t("home.welcome")}</p>
+
+      <!-- 첫 번째 카드 캐러셀 -->
+      <div id="homeCardCarousel1" class="card-carousel">
+        <div class="cc-viewport">
+          <div class="cc-track">
+            <a class="cc-slide" href="https://www.notion.so/CAMPUS-ASIA-The-ACE-Summer-Intensive-Program-2025-2345a232986a8097a089cf661ed90216" target="_blank" rel="noopener">
+              <img src="poster.jpg" alt="poster">
+            </a>
+          </div>
+        </div>
+      </div>
     `;
 
     const bottomBar = document.getElementById("bottomBar");
@@ -473,8 +472,8 @@ function renderHome(defaultTab = "home") {
         border: none;
         border-radius: 8px;
         cursor: pointer;
-        transition: background-color 0.2s;
-      " onmouseover="this.style.backgroundColor='#0f9f77'"
+        transition: background-color 0.2s;"
+        onmouseover="this.style.backgroundColor='#0f9f77'"
         onmouseout="this.style.backgroundColor='#10b981'">
         ${t("home.findFriend")}
       </button>
@@ -485,11 +484,62 @@ function renderHome(defaultTab = "home") {
       state.currentMatchCandidates = [];
       state.currentMatchIndex = 0;
       state.waitingForDecision = false;
-      renderMatchingFlowLayout(); // 질문 흐름 전환
+      renderMatchingFlowLayout();
     };
+
+    // (여러 캐러셀 초기화 시) 필요하면 여기서 init 함수 호출
+    // initHomeCardCarousel("homeCardCarousel1");
+    // initHomeCardCarousel("homeCardCarousel2");
   }
 
   function renderCalendarTab() {
+    // ===== 타입별 색상 (종류별로 색상 고정) =====
+    const TYPE_COLORS = {
+      exchange: '#6ee7b7',   // 교환학생 (연한 민트/에메랄드)
+      intensive: '#93c5fd',  // Intensive (연한 파랑)
+      online: '#fcd34d',     // Online (연한 주황/노랑)
+    };
+
+    // ===== 대학 선택 버튼 정의 =====
+    const UNIVERSITIES = [
+      { id: 'snu',    label: '서울대' },
+      { id: 'pku',    label: '북경대' },
+      { id: 'rikkyo', label: '릿쿄대' },
+      { id: 'nus',    label: 'NUS' },
+    ];
+    let selectedUniv = 'snu'; // 기본값 서울대
+
+    // ===== 예시 데이터 (대학별) =====
+    // type: 'exchange' | 'intensive' | 'online'
+    const SCHEDULES = {
+      snu: [
+        { title:'NUS 파견 교환학생 선발', type:'exchange', start:'2025-08-01', end:'2025-08-29' },
+        { title:'CAMPUS Asia Winter Intensive Program 모집', type:'intensive', start:'2025-11-03', end:'2025-11-28' },
+        { title:'Online Course 수강생 모집(릿교대)', type:'online', start:'2025-09-02', end:'2025-09-15' },
+      ],
+      pku: [
+        { title:'교환학생 선발', type:'exchange', start:'2025-09-05', end:'2025-10-10' },
+        { title:'CAMPUS Asia Winter Intensive Program 모집', type:'intensive', start:'2025-11-03', end:'2025-11-28' },
+      ],
+      rikkyo: [
+        { title:'교환학생 선발', type:'exchange', start:'2025-08-25', end:'2025-09-10' },
+        { title:'CAMPUS Asia Winter Intensive Program 모집', type:'intensive', start:'2025-11-03', end:'2025-11-28' },
+      ],
+      nus: [
+        { title:'교환학생 선발', type:'exchange', start:'2025-08-29', end:'2025-09-16' },
+        { title:'CAMPUS Asia Winter Intensive Program 모집', type:'intensive', start:'2025-11-03', end:'2025-11-28' },
+      ],
+    };
+
+    // ===== 레이아웃 파라미터 =====
+    const CELL_MIN_HEIGHT = 60;
+    const DATE_LABEL_H    = 16;
+    const BAR_H           = 18;
+    const BAR_GAP         = 4;
+    const CELL_SIDE_PAD   = 4;
+    const DATE_TO_BAR_GAP = 12;
+
+    // ===== 유틸 =====
     const monthNames = [
       t("calendar.month1"), t("calendar.month2"), t("calendar.month3"), t("calendar.month4"),
       t("calendar.month5"), t("calendar.month6"), t("calendar.month7"), t("calendar.month8"),
@@ -498,17 +548,63 @@ function renderHome(defaultTab = "home") {
     let calendarYear = new Date().getFullYear();
     let calendarMonth = new Date().getMonth();
 
+    function parseDate(s){ if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+    // ===== 기존 달력 뼈대 + 대학 버튼 렌더 =====
     const homeContent = document.getElementById("homeContent");
     homeContent.innerHTML = `
-      <h2>${t("common.programschedule")}</h2>
-      <div class="calendar-wrapper">
+
+    <!-- 대학 선택 버튼 -->
+    <div id="univTabs" style="
+      display:flex;
+      justify-content:space-between;
+      margin-bottom:0px;
+      gap:6px;
+    ">
+      ${UNIVERSITIES.map(u=>`
+        <button data-univ="${u.id}" class="univ-btn" style="
+          /* 하드 리셋 */
+          all: unset;                         /* 기본 스타일 전부 제거 */
+          display: inline-flex !important;    /* 텍스트 중앙 정렬 용이 */
+          align-items: center !important;
+          justify-content: center !important;
+          box-sizing: border-box !important;
+
+          /* 모바일 브라우저 기본 버튼 모양 제거 */
+          appearance: none !important;
+          -webkit-appearance: none !important;
+
+          /* 크기 강제 */
+          width: 50px !important;
+          height: 25px !important;
+          min-height: 0 !important;           /* 일부 리셋/프레임워크의 min-height 무력화 */
+          padding: 0 !important;              /* 내부 여백 제거 */
+          line-height: 20px !important;       /* 한 줄 텍스트 수직 가운데 */
+
+          /* 모양 */
+          border: 1px solid #d1d5db !important;
+          border-radius: 999px !important;    /* 동글동글 */
+          background: #fff !important;
+          cursor: pointer !important;
+          font-size: 12px !important;         /* 글자 크기는 유지 */
+          white-space: nowrap !important;
+          text-align: center !important;
+          overflow: hidden !important;         /* 내용 넘침 방지 */
+          margin-right: 6px;
+        ">
+          ${u.label}
+        </button>
+      `).join('')}
+    </div>
+
+      <div class="calendar-wrapper" id="calendarWrapper" style="position:relative;">
         <div style="text-align:center; font-size:18px; font-weight:500; margin-bottom:4px; color:#10b981;" id="yearLabel">${calendarYear}</div>
         <div class="calendar-header">
           <button id="prevMonthBtn">&lt;</button>
           <span id="monthLabel">${monthNames[calendarMonth]}</span>
           <button id="nextMonthBtn">&gt;</button>
         </div>
-        <table class="calendar">
+        <table class="calendar" id="programCalendar">
           <thead>
             <tr>
               <th>${t("common.sun")}</th><th>${t("common.mon")}</th><th>${t("common.tue")}</th><th>${t("common.wed")}</th>
@@ -517,61 +613,240 @@ function renderHome(defaultTab = "home") {
           </thead>
           <tbody id="calendarBody"></tbody>
         </table>
+        <div id="barsOverlay" style="position:absolute; left:0; right:0; pointer-events:none;"></div>
       </div>
     `;
 
-    const monthLabel = document.getElementById("monthLabel");
+    const monthLabel   = document.getElementById("monthLabel");
     const calendarBody = document.getElementById("calendarBody");
-    const prevBtn = document.getElementById("prevMonthBtn");
-    const nextBtn = document.getElementById("nextMonthBtn");
+    const prevBtn      = document.getElementById("prevMonthBtn");
+    const nextBtn      = document.getElementById("nextMonthBtn");
+    const yearLabel    = document.getElementById("yearLabel");
+
+    // 버튼 active 스타일 적용
+    function updateUnivTabStyles(){
+      document.querySelectorAll('#univTabs .univ-btn').forEach(btn=>{
+        const on = btn.dataset.univ === selectedUniv;
+        btn.style.background = on ? '#10b981' : '#fff';
+        btn.style.color = on ? '#fff' : '#111827';
+        btn.style.borderColor = on ? '#10b981' : '#e5e7eb';
+        btn.style.fontWeight = on ? '600' : '400';
+      });
+    }
+
+    document.querySelectorAll('#univTabs .univ-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedUniv = btn.dataset.univ;
+        updateUnivTabStyles();
+        updateCalendar(); // 대학 변경 시 달력/막대 갱신
+      });
+    });
+    updateUnivTabStyles();
 
     function generateCalendar(year, month) {
       const firstDay = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
-
       const days = [];
       for (let i = 0; i < firstDay; i++) days.push("");
       for (let i = 1; i <= totalDays; i++) days.push(i);
       return days;
     }
 
+    function getWeekRows(year, month) {
+      const totalDays = new Date(year, month+1, 0).getDate();
+      const weeks = [];
+      let cursor = 1, row = 0;
+
+      let start = new Date(year, month, cursor);
+      let end = new Date(year, month, Math.min(cursor + (6 - start.getDay()), totalDays));
+      weeks.push({ startDate: start, endDate: end, rowIndex: row++ });
+      cursor = end.getDate() + 1;
+
+      while (cursor <= totalDays) {
+        start = new Date(year, month, cursor);
+        end = new Date(year, month, Math.min(cursor + 6, totalDays));
+        weeks.push({ startDate: start, endDate: end, rowIndex: row++ });
+        cursor = end.getDate() + 1;
+      }
+      return weeks;
+    }
+
+    // 달력 내부(셀 위)에 막대 그리기 — 선택된 대학만 표시, 날짜 아래 '위에서부터' 스택
+    function drawBarsInsideCalendar(year, month) {
+      const wrapper = document.getElementById('calendarWrapper');
+      const table   = document.getElementById('programCalendar');
+      const overlay = document.getElementById('barsOverlay');
+
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+
+      // 오버레이를 tbody와 정확히 겹치게
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const theadRect   = thead.getBoundingClientRect();
+      const tbodyRect   = tbody.getBoundingClientRect();
+      overlay.style.top    = `${theadRect.bottom - wrapperRect.top}px`;
+      overlay.style.bottom = `${wrapperRect.bottom - tbodyRect.bottom}px`;
+      overlay.innerHTML = '';
+
+      // === 핵심: overlay 좌표계로 모두 재계산 ===
+      const overlayRect = overlay.getBoundingClientRect();
+
+      // 주(row) 위치/높이 (overlay 기준)
+      const trs        = Array.from(tbody.querySelectorAll('tr'));
+      const weekRects  = trs.map(tr => tr.getBoundingClientRect());
+      let rowTops      = weekRects.map(r => r.top - overlayRect.top);
+      let rowHeights   = weekRects.map(r => r.height);
+
+      // 요일별 x/width (첫 데이터 행 기준, overlay 기준)
+      const firstRow = trs[0];
+      if (!firstRow) return;
+      const colRects   = Array.from(firstRow.children).map(td => td.getBoundingClientRect());
+      const colLefts   = colRects.map(r => r.left  - overlayRect.left);
+      const colRights  = colRects.map(r => r.right - overlayRect.left);
+      const colWidths  = colRects.map(r => r.width);
+
+      // 월 범위 & 주 정의
+      const monthStart = new Date(year, month, 1);
+      const monthEnd   = new Date(year, month+1, 0);
+      const weeks = getWeekRows(year, month);
+
+      // 선택된 대학 일정만 사용
+      const programs = (SCHEDULES[selectedUniv] || []).slice();
+
+      // 1) 트랙 배치(겹침 방지) 1차 패스
+      const tracksPerWeek = weeks.map(() => []); // 각 주의 트랙: 마지막 xRight(px)
+      const segs1 = []; // 1차 패스 결과 (xLeft, width, rowIndex, trackIdx, style 정보)
+
+      programs.forEach(p => {
+        const s = parseDate(p.start), e = parseDate(p.end);
+        if (!s || !e) return;
+        if (e < monthStart || s > monthEnd) return;
+
+        weeks.forEach(week => {
+          // 주(행)와 기간 교집합 확인
+          const intersects = !(e < week.startDate || s > week.endDate);
+          if (!intersects) return;
+
+          // 이 주 안에서 실제 그릴 구간
+          const segStart = s < week.startDate ? week.startDate : s;
+          const segEnd   = e > week.endDate   ? week.endDate   : e;
+
+          const leftCol  = segStart.getDay();
+          const rightCol = segEnd.getDay();
+
+          // x 범위 (overlay 기준)
+          const xLeft  = colLefts[leftCol] + CELL_SIDE_PAD;
+          const xRight = colRights[rightCol] - CELL_SIDE_PAD;
+          const width  = Math.max(xRight - xLeft, 8);
+
+          // 트랙 할당(겹치면 다음 줄)
+          const tracks = tracksPerWeek[week.rowIndex];
+          let trackIdx = 0;
+          for (; trackIdx < tracks.length; trackIdx++) {
+            if (xLeft >= tracks[trackIdx] + 2) break; // 작은 여유
+          }
+          tracks[trackIdx] = xLeft + width;
+
+          segs1.push({
+            rowIndex: week.rowIndex,
+            xLeft, width, trackIdx,
+            kind: p.kind, // 'apply' | 'period'
+            color: TYPE_COLORS[p.type] || '#9ca3af',
+            label: p.title
+          });
+        });
+      });
+
+      // 2) 주별 요구 높이 → 셀 높이 갱신 (날짜 위/작게, 막대는 아래에서 '위→아래' 스택)
+      const requiredHeights = tracksPerWeek.map(tracks => {
+        const n = tracks.length;
+        const needed = DATE_LABEL_H + DATE_TO_BAR_GAP + n * (BAR_H + BAR_GAP) + BAR_GAP;
+        return Math.max(CELL_MIN_HEIGHT, needed);
+      });
+      trs.forEach((tr, i) => {
+        Array.from(tr.children).forEach(td => {
+          td.style.height = `${requiredHeights[i]}px`;
+          td.style.minHeight = `${requiredHeights[i]}px`;
+          td.style.verticalAlign = 'top';
+          td.style.padding = '6px';
+        });
+      });
+
+      // 높이 바꾸었으니 overlay 기준으로 다시 측정 (좌표 오차 방지)
+      const overlayRect2 = overlay.getBoundingClientRect();
+      const weekRects2   = trs.map(tr => tr.getBoundingClientRect());
+      rowTops    = weekRects2.map(r => r.top - overlayRect2.top);
+      rowHeights = weekRects2.map(r => r.height);
+
+      // 3) 실제 막대 DOM 생성 (위에서부터 날짜 아랫줄로 정렬)
+      segs1.forEach(seg => {
+        const y = rowTops[seg.rowIndex] + DATE_LABEL_H + DATE_TO_BAR_GAP + seg.trackIdx * (BAR_H + BAR_GAP);
+
+        const bar = document.createElement('div');
+        bar.style.position = 'absolute';
+        bar.style.left = `${seg.xLeft}px`;
+        bar.style.top = `${y}px`;
+        bar.style.width = `${seg.width}px`;
+        bar.style.height = `${BAR_H}px`;
+        bar.style.borderRadius = '999px';
+        bar.style.display = 'flex';
+        bar.style.alignItems = 'center';
+        bar.style.padding = '0 10px';
+        bar.style.boxSizing = 'border-box';
+        bar.style.fontSize = '12px';
+        bar.style.whiteSpace = 'nowrap';
+        bar.style.overflow = 'hidden';
+        bar.style.textOverflow = 'ellipsis';
+        bar.style.pointerEvents = 'none';
+
+        bar.style.background = seg.color;
+        bar.style.color = '#fff';
+        bar.style.border = `1px solid ${seg.color}`;
+
+        bar.textContent = seg.label;
+        overlay.appendChild(bar);
+      });
+    }
+
     function updateCalendar() {
-      // 연도와 월 모두 업데이트
-      document.getElementById("yearLabel").textContent = calendarYear;
+      yearLabel.textContent = calendarYear;
       monthLabel.textContent = `${monthNames[calendarMonth]}`;
 
       const days = generateCalendar(calendarYear, calendarMonth);
       let html = "";
       for (let i = 0; i < days.length; i++) {
         if (i % 7 === 0) html += "<tr>";
-        html += `<td>${days[i] || ""}</td>`;
+        if (!days[i]) {
+          html += `<td></td>`;
+        } else {
+          const d = Number(days[i]);
+          // 날짜는 위쪽 작은 글씨로, 막대가 가리지 않도록 고정
+          html += `<td><div style="font-size:11px;color:#6b7280;margin-bottom:2px;">${d}</div></td>`;
+        }
         if (i % 7 === 6) html += "</tr>";
       }
       if (days.length % 7 !== 0) {
         html += "<td></td>".repeat(7 - (days.length % 7)) + "</tr>";
       }
       calendarBody.innerHTML = html;
+
+      drawBarsInsideCalendar(calendarYear, calendarMonth);
     }
 
     prevBtn.onclick = () => {
       calendarMonth--;
-      if (calendarMonth < 0) {
-        calendarMonth = 11;
-        calendarYear--;
-      }
+      if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
       updateCalendar();
     };
-
     nextBtn.onclick = () => {
       calendarMonth++;
-      if (calendarMonth > 11) {
-        calendarMonth = 0;
-        calendarYear++;
-      }
+      if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
       updateCalendar();
     };
 
     updateCalendar();
+
+    window.addEventListener('resize', () => drawBarsInsideCalendar(calendarYear, calendarMonth), { passive: true });
   }
 
   async function renderMatchingTab() {
@@ -697,6 +972,7 @@ function renderHome(defaultTab = "home") {
 
       <div class="basic-info">
         <p><strong>${t("profile.age")}</strong>: ${u.age ?? '-'}</p>
+        <p><strong>${t("label.gender")}</strong>: ${u.gender ? (t(u.gender) || t(`gender.${u.gender}`)) : '-'}</p>
         <p><strong>${t("profile.school")}</strong>: ${t(u.school ?? '-')}</p>
         <p><strong>${t("profile.major")}</strong>: ${t(u.major ?? '-')}</p>
         <p><strong>${t("profile.mbti")}</strong>: ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '')}`) : '-'}</p>
@@ -1143,29 +1419,7 @@ function renderHome(defaultTab = "home") {
 
     backNav.appendChild(name);
 
-    // 📞 통화 버튼 상단바에 추가
-    const callBtn = document.createElement("button");
-    callBtn.id = "callBtn";
-    callBtn.textContent = "Call";
-    callBtn.dataset.calling = "false";
-    callBtn.style.cssText = `
-      position: absolute;
-      top: -10px;
-      right: 5px;
-      width: 2em;
-      height: 2em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: bold;
-      border: none;
-      background: none;
-      color: #10b981;
-      cursor: pointer;
-      margin: 0;
-    `;
-    backNav.appendChild(callBtn);
+
 
     homeContent.innerHTML = `
     <div id="chatRoom" style="display: flex; flex-direction: column; height: 100dvh; padding-top: 41px;">
@@ -1264,18 +1518,6 @@ function renderHome(defaultTab = "home") {
 
     const backBtn = document.getElementById("backBtn");
     if (backBtn) backBtn.onclick = () => renderChatTab();
-
-    callBtn.onclick = async () => {
-      if (callBtn.dataset.calling === "true") {
-        await endCall(callId);
-        callBtn.textContent = t("chat.call");
-        callBtn.dataset.calling = "false";
-      } else {
-        await startCall(partnerEmail);
-        callBtn.textContent = t("chat.endCall");
-        callBtn.dataset.calling = "true";
-      }
-    };
 
     const chatBox = document.getElementById("chatBox");
     chatBox.style.marginTop = "41px"; // ✅ 상단 고정바에 가려지지 않게 여백 확보
@@ -1444,87 +1686,7 @@ function renderHome(defaultTab = "home") {
     disableScrollForChat(); // ✅ 채팅 진입 시 스크롤 막기
   }
 
-  function getLocale() {
-    const lang = state.currentLang;
-    return lang === "ko" ? "ko-KR" :
-          lang === "en" ? "en-US" :
-          lang === "jp" ? "jp-JP" :
-          lang === "ch" ? "ch-CN" :
-          "en-US";
-  }
-
   window.renderChatRoom = renderChatRoom;
-
-  async function startCall(calleeEmail) {
-    state.currentCallPartnerEmail = calleeEmail;
-
-    // ✅ 발신자 이메일 확인 로그
-    console.log("📞 발신자 이메일:", state.currentUserEmail);
-
-    // 🔊 마이크 스트림
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // 📡 Peer 연결 설정
-    peerConnection = new RTCPeerConnection(servers);
-
-    // 🔗 로컬 트랙 추가
-    localStream.getTracks().forEach(track => {
-      peerConnection.addTrack(track, localStream);
-    });
-
-    startRecording(localStream);
-
-    // ✅ 상대방 email을 문서 ID로 사용
-    const callDoc = doc(db, "calls", calleeEmail); // 수신자 이메일 기반 문서 ID
-    const callerCandidates = collection(callDoc, "callerCandidates");
-
-    // ICE 후보 수집
-    peerConnection.onicecandidate = (e) => {
-      if (e.candidate) {
-        setDoc(doc(callerCandidates), e.candidate.toJSON());
-      }
-    };
-
-    // 📞 Offer 생성
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
-    // ✅ callData는 딱 한 번만 선언!
-    const callData = {
-      caller: state.currentUserEmail,
-      callee: calleeEmail,
-      offer: offer,
-      status: "calling",
-      timestamp: serverTimestamp()
-    };
-
-    // 전체 정보 저장 (callee 기준)
-    await setDoc(callDoc, callData);
-
-    // (선택) 본인 이메일 기준으로도 저장
-    await setDoc(doc(db, "calls", state.currentUserEmail), callData);
-
-    // 응답 감시
-    onSnapshot(callDoc, async (snapshot) => {
-      const data = snapshot.data();
-      console.log("📞 데이터 확인", data);  // 이 로그에 caller가 없으면 위에서 잘못 저장된 것
-      if (peerConnection && !peerConnection.currentRemoteDescription && data?.answer) {
-        const answerDesc = new RTCSessionDescription(data.answer);
-        await peerConnection.setRemoteDescription(answerDesc);
-      }
-    });
-
-    // 상대 트랙 수신 처리
-    peerConnection.ontrack = (e) => {
-      document.getElementById("remoteAudio").srcObject = e.streams[0];
-      document.getElementById("callStatus").style.display = "block";
-
-      // ⏱️ 통화 타이머 시작
-      startCallTimer();
-    };
-
-    console.log("📞 통화 요청 전송 완료:", calleeEmail);
-  }
 
   function renderProfileTab() {
     const container = document.getElementById("homeContent");
@@ -1649,6 +1811,7 @@ function renderHome(defaultTab = "home") {
           <div style="flex: 1; min-width: 0;">
             <div class="my-info" style="margin-top: 21px;">
               <p><strong>${t("profile.age")}</strong> ${u.age ?? '-'}</p>
+              <p><strong>${t("label.gender")}</strong> ${u.gender ? (t(u.gender) || t(`gender.${u.gender}`)) : '-'}</p>
               <p><strong>${t("profile.school")}</strong> ${t(u.school ?? '-')}</p>
               <p><strong>${t("profile.major")}</strong> ${t(u.major ?? '-')}</p>
               <p><strong>${t("profile.mbti")}</strong> ${u.mbti ? t(`mbti.${u.mbti.replace(/^mbti\./, '').replace(/^:/, '')}`) : '-'}</p>
@@ -1972,6 +2135,7 @@ export function renderCurrentMatchStep() {
       <div class="basic-info">
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
+        <p><strong>${t("label.gender")}: </strong> ${candidate.gender ? (t(candidate.gender) || t(`gender.${candidate.gender}`)) : '-'}</p>
         <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
         <p><strong>${t("profile.major")}: </strong> ${t(candidate.major)}</p>
         <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
@@ -2073,19 +2237,13 @@ async function handleDecision(accepted) {
         chatBtn.onclick = async () => {
           const chatId = [currentUserEmail, otherEmail].sort().join("-");
 
-          // ✅ nav 없으면 복구
-          if (!document.getElementById("homeMenu")) {
-            await renderHome();
+          // 레이아웃이 없을 때만 최소한으로 복구하되, 기본 탭을 "chat"으로
+          if (!document.getElementById("homeContent") || !document.getElementById("homeMenu")) {
+            await renderHome("chat");                     // ✅ 기본 탭을 chat로
+            await new Promise(r => requestAnimationFrame(r)); // 한 프레임 대기(안정화)
           }
 
-          // ✅ chatBox 먼저 보장해주고 → 바로 방 진입
-          document.querySelectorAll("nav button").forEach(btn => btn.classList.remove("active"));
-          document.getElementById("navChatBtn")?.classList.add("active");
-
-          // ✅ chatBox 영역 준비
-          document.getElementById("homeContent").innerHTML = `<div id="chatBox"></div>`;
-
-          // ✅ 바로 채팅방 진입!
+          // ✅ 탭 전환 호출 없이 곧바로 방 진입
           renderChatRoom(chatId, otherEmail);
         };
       }
@@ -2154,6 +2312,7 @@ function renderMatchCandidate() {
       <div class="basic-info">
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
+        <p><strong>${t("label.gender")}: </strong> ${candidate.gender ? (t(candidate.gender) || t(`gender.${candidate.gender}`)) : '-'}</p>
         <p><strong>${t("profile.school")}: </strong> ${t(candidate.school)}</p>
         <p><strong>${t("profile.major")}: </strong> ${t(candidate.major)}</p>
         <p><strong>${t("profile.mbti")}: </strong> ${t(candidate.mbti)}</p>
@@ -2313,263 +2472,6 @@ async function sendMatchResponse(candidateEmail, accepted) {
   }
 }
 
-function listenForIncomingCalls() {
-  if (!state.currentUserEmail) return;
-      const q = query(collection(db, "calls"), where("callee", "==", state.currentUserEmail), where("status", "==", "calling"));
-      
-
-      onSnapshot(q, async (snapshot) => {
-        snapshot.docChanges().forEach(async change => {
-          if (change.type === "added") {
-            // ✅ 중복 수신 방지
-            if (state.incomingCallHandled) return;
-            state.incomingCallHandled = true;
-
-            const data = change.doc.data();
-            const callId = change.doc.id;
-            renderIncomingCallUI(data, callId);
-
-            console.log("📡 대기 시작", state.currentUserEmail);
-          }
-      });
-  });
-}
-
-// --- 수신자 통화 수락/거절 화면 ---
-function renderIncomingCallUI(data, callId) {
-
-  console.log("callId:", callId);
-  console.log("data:", data);
-  console.log("data.caller:", data?.caller); // 이게 undefined라면 문제가 있는 거야
-  const container = document.getElementById("app");
-        container.innerHTML = `
-          <div style="padding: 20px; text-align: center;">
-            <h2>📞 ${data.caller}님이 전화 중입니다</h2>
-            <button id="acceptCallBtn" style="margin-right:10px;">수락</button>
-            <button id="rejectCallBtn">거부</button>
-          </div>
-        `;
-
-        document.getElementById("acceptCallBtn").onclick = async () => {
-          await answerCall(callId, data);
-        };
-
-        document.getElementById("rejectCallBtn").onclick = async () => {
-          await setDoc(doc(db, "calls", callId), { status: "rejected" }, { merge: true });
-          alert("통화를 거절했습니다.");
-          state.incomingCallHandled = false;
-          renderHome(); // 또는 이전 UI 복원
-        };
-
-        console.log("📞 수신 UI 렌더링:", data.caller);
-      }
-
-      async function answerCall(callId, data) {
-
-        if (!data) {
-          console.error("❌ data is undefined in answerCall");
-          return;
-        }
-
-        if (!data.caller) {
-          console.error("❌ data.caller is undefined");
-          return;
-        }
-
-        console.log("📞 수신자 화면 answerCall 호출됨:", callId, data);
-
-        const callerEmail = data?.caller;
-
-        if (!callerEmail) {
-          console.error("❌ callerEmail is undefined");
-          return;
-        }
-
-        state.currentCallPartnerEmail = callerEmail;
-
-        // 🔊 내 오디오 스트림 가져오기
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        peerConnection = new RTCPeerConnection(servers);
-
-        // 🔗 오디오 트랙 추가
-        localStream.getTracks().forEach(track => {
-          peerConnection.addTrack(track, localStream);
-        });
-
-        // 🎙️ 통화 녹음 시작
-        startRecording(localStream);
-
-        const callDoc = doc(db, "calls", callId);
-        const calleeCandidates = collection(callDoc, "calleeCandidates");
-
-        // 📡 ICE 후보 송신
-        peerConnection.onicecandidate = e => {
-          if (e.candidate) {
-            setDoc(doc(calleeCandidates), e.candidate.toJSON());
-          }
-        };
-
-        // 📥 상대의 offer 설정
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-        // 📤 내 answer 생성
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        // ☁️ Firestore에 answer 저장
-        await setDoc(callDoc, {
-          answer,
-          status: "inCall"
-        }, { merge: true });
-
-        // 📲 상대 오디오 수신
-        peerConnection.ontrack = (e) => {
-          const audio = document.createElement("audio");
-          audio.srcObject = e.streams[0];
-          audio.autoplay = true;
-          document.body.appendChild(audio);
-
-          // ⏱️ 통화 타이머 시작
-          startCallTimer();
-
-          // 📴 상단 call 버튼 상태 변경
-          const callBtn = document.getElementById("callBtn");
-          if (callBtn) {
-            callBtn.textContent = "📴";
-            callBtn.dataset.calling = "true";
-          }
-        };
-
-        // 🛑 통화 종료 버튼 추가
-        const endBtn = document.createElement("button");
-        endBtn.innerText = "📴";
-        endBtn.id = "endCallBtn";
-        endBtn.style.position = "fixed";
-        endBtn.style.bottom = "20px";
-        endBtn.style.right = "20px";
-        endBtn.style.zIndex = "1000";
-        endBtn.style.backgroundColor = "#ef4444";
-        endBtn.style.color = "white";
-        endBtn.style.border = "none";
-        endBtn.style.padding = "10px 14px";
-        endBtn.style.borderRadius = "999px";
-        endBtn.style.fontSize = "16px";
-        endBtn.style.cursor = "pointer";
-        endBtn.onclick = () => endCall(callId);
-        document.body.appendChild(endBtn);
-
-        // 상태 동기화
-        state.incomingCallHandled = true;
-      }
-
-      async function endCall(callId) {
-        try {
-          // ⏹️ 통화 타이머 중지
-          if (typeof stopCallTimer === "function") stopCallTimer();
-
-          // 🎙️ 녹음 멈추기
-          if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-          }
-
-          // 🔌 피어 연결 종료
-          if (peerConnection) {
-            peerConnection.close();
-            peerConnection = null;
-          }
-
-          // 🔇 로컬 오디오 스트림 정지
-          if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
-          }
-
-          // ☁️ Firebase에서 통화 상태 업데이트
-          if (callId) {
-            await setDoc(doc(db, "calls", callId), { status: "ended" }, { merge: true });
-          }
-
-          // 📴 통화 종료 버튼 제거
-          const endBtn = document.getElementById("endCallBtn");
-          if (endBtn) endBtn.remove();
-
-          // 🔈 수신 오디오 제거
-          const audioEls = document.querySelectorAll("audio");
-          audioEls.forEach(audio => audio.remove());
-
-          const remoteAudio = document.getElementById("remoteAudio");
-          if (remoteAudio) remoteAudio.srcObject = null;
-
-          // 💬 통화 상태 텍스트 숨기기
-          const statusEl = document.getElementById("callStatus");
-          if (statusEl) statusEl.style.display = "none";
-
-          // 📞 상단 call 버튼 초기화
-          const callBtn = document.getElementById("callBtn");
-          if (callBtn) {
-            callBtn.textContent = "📞";
-            callBtn.dataset.calling = "false";
-          }
-
-          // ✅ 알림
-          alert("통화가 종료되었습니다.");
-        } catch (err) {
-          console.error("❌ 통화 종료 중 오류:", err);
-          alert("통화 종료 중 오류가 발생했습니다.");
-        }
-      }
-
-    function startCallTimer() {
-      callStartTime = Date.now();
-      const callStatus = document.getElementById("callStatus");
-      callTimer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-        const minutes = Math.floor(elapsed / 60);
-        const seconds = elapsed % 60;
-        callStatus.textContent = `통화 중... (${minutes}:${seconds < 10 ? "0" : ""}${seconds})`;
-      }, 1000);
-    }
-
-    function stopCallTimer() {
-      clearInterval(callTimer);
-      callTimer = null;
-    }
-
-    function startRecording(stream) {
-      recordedChunks = [];
-
-      mediaRecorder = new MediaRecorder(stream);
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunks.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(recordedChunks, { type: "audio/webm" });
-        const filePath = `recordings/${state.currentUserEmail}/${callId}.webm`;
-
-        const storage = getStorage();
-        const audioRef = ref(storage, filePath);
-
-        await uploadBytes(audioRef, blob);
-        const downloadURL = await getDownloadURL(audioRef);
-        console.log("녹음 업로드 완료:", downloadURL);
-
-        // ✅ Firestore에 저장
-        const callLogRef = doc(db, "callLogs", callId);
-        await setDoc(callLogRef, {
-          caller: state.currentUserEmail,
-          callee: state.currentCallPartnerEmail,  // 👉 이 값을 global 또는 startCall/answerCall에서 할당해줘야 해
-          url: downloadURL,
-          timestamp: serverTimestamp()
-        });
-      };
-
-      mediaRecorder.start();
-    }
-
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("toggle-intro-btn")) {
     const card = e.target.closest(".profile-card"); // 🔥 카드 범위 지정
@@ -2682,3 +2584,20 @@ function updateViewportHeight() {
 
 window.addEventListener('resize', updateViewportHeight);
 window.addEventListener('load', updateViewportHeight);
+
+document.addEventListener("DOMContentLoaded", () => {
+  const carousel = document.querySelector(".carousel-images");
+  if (!carousel) return; // 홈탭이 아직 안 뜬 경우 방지
+  const images = document.querySelectorAll(".carousel-images a");
+  let index = 0;
+
+  document.querySelector(".nextBtn").addEventListener("click", () => {
+    index = (index + 1) % images.length;
+    carousel.style.transform = `translateX(${-index * 100}%)`;
+  });
+
+  document.querySelector(".prevBtn").addEventListener("click", () => {
+    index = (index - 1 + images.length) % images.length;
+    carousel.style.transform = `translateX(${-index * 100}%)`;
+  });
+});
