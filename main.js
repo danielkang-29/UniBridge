@@ -2131,7 +2131,7 @@ export function renderCurrentMatchStep() {
     <h2>${t("match.candidateTitle")}</h2>
 
     <!-- 프로필 & 소개를 감싸는 영역 -->
-    <div id="profileArea" style="min-height: 300px;">
+    <div id="profileArea" style="min-height: 300px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);">
       <div class="basic-info">
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
@@ -2151,8 +2151,20 @@ export function renderCurrentMatchStep() {
     <!-- 버튼은 프로필 영역 바깥에 두고 고정 -->
     <button class="toggle-intro-btn" data-email="${candidate.id}">${t("action.showIntro") || "자기소개 보기"}</button>
 
-    <div class="decision-buttons">
+    <div class="decision-buttons" style="
+      /* 🔽 화면 하단 고정(스크롤해도 보이게) */
+      position: sticky; bottom: 0; left: 0; right: 0;
+      /* 🔽 버튼이 가리는 느낌 줄이려고 그라데이션 배경 */
+      background: linear-gradient(180deg, rgba(245,245,245,0), #f5f5f5 40%);
+      padding: 10px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+      margin-top: 8px;
+
+      display: flex; gap: 10px; flex-wrap: wrap;
+      z-index: 5;
+    ">
       <button class="accept-btn" id="acceptBtn" style="
+        flex: 1 1 140px;          /* 🔽 작은 화면에서 자동 줄바꿈 */
+        min-width: 120px;
         background-color: #4ade80;
         color: white;
         border: none;
@@ -2166,6 +2178,8 @@ export function renderCurrentMatchStep() {
       </button>
 
       <button class="reject-btn" id="rejectBtn" style="
+        flex: 1 1 140px;          /* 🔽 작은 화면에서 자동 줄바꿈 */
+        min-width: 120px;
         background-color: #f87171;
         color: white;
         border: none;
