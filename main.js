@@ -478,7 +478,6 @@ function renderHome(defaultTab = "home") {
         ${t("home.findFriend")}
       </button>
     `;
-
     document.getElementById("matchBtn").onclick = () => {
       state.matchStep = 0;
       state.matchAnswers = {};
@@ -991,7 +990,7 @@ function renderHome(defaultTab = "home") {
     const bottomBar = document.getElementById("bottomBar");
     if (bottomBar) {
       bottomBar.innerHTML = `
-        <div style="margin-bottom: 16px;">
+        <div style="margin-bottom: 12px;">
           <button id="toggleIntroBtn" data-email="${email}" class="toggleIntroBtn">
             ${t("common.lookIntroduction")}
           </button>
