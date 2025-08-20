@@ -151,6 +151,7 @@ const i18n = {
       q6: "7. 성격을 알려주세요 (중복 선택 가능)",
       q7: "8. 연락 빈도는 어떻게 되시나요?",
       q8: "9. 관심사를 알려주세요 (중복 선택 가능)",
+      q9: "10. 성별을 알려주세요",
       finalTitle: "계정 생성 - 이메일과 비밀번호 입력",
       emailLabel: "학교 공식 이메일",
       emailPlaceholder: "이메일 입력",
@@ -158,6 +159,7 @@ const i18n = {
       passwordPlaceholder: "비밀번호 입력",
       createAccount: "계정 생성하기"
     },
+    gender: { male: "남성", female: "여성"},
     signupError: "계정 생성 중 오류가 발생했습니다: {error}",
     loading: "로딩 중",
     match: {
@@ -496,7 +498,8 @@ const i18n = {
       major: "학과",
       mbti: "MBTI",
       personality: "성격",
-      purpose: "관심사"
+      purpose: "관심사",
+      gender: "성별"
     },
     action: {
       accept: "수락",
@@ -631,6 +634,7 @@ const i18n = {
       q6: "7. How would you describe your personality? (You can choose more than one)",
       q7: "8. How often would you like to keep in touch?",
       q8: "9. What's your goal for matching? (You can choose more than one)",
+      q9: "10. What's your gender?",
       finalTitle: "Create Account - Enter Email & Password",
       emailLabel: "University Email",
       emailPlaceholder: "Enter your email",
@@ -638,6 +642,7 @@ const i18n = {
       passwordPlaceholder: "Enter your password",
       createAccount: "Create Account"
     },
+    gender: { male: "Male", female: "Female"},
     signupError: "There was an error while creating your account: {error}",
     loading: "Loading...",
     match: {
@@ -975,7 +980,8 @@ const i18n = {
       major: "Major",
       mbti: "MBTI",
       personality: "Personality",
-      purpose: "Interests"
+      purpose: "Interests",
+      gender: "Gender"
     },
     action: {
       accept: "Accept",
@@ -1110,6 +1116,7 @@ const i18n = {
       q6: "7. 性格を教えてください（複数選択可）",
       q7: "8. 連絡頻度はどのくらいですか？",
       q8: "9. マッチングの目的を教えてください（複数選択可）",
+      q9: "10. 性別を教えてください",
       finalTitle: "アカウント作成 - メールアドレスとパスワードを入力",
       emailLabel: "大学の公式メール",
       emailPlaceholder: "メールアドレスを入力",
@@ -1117,6 +1124,7 @@ const i18n = {
       passwordPlaceholder: "パスワードを入力",
       createAccount: "アカウントを作成する"
     },
+    gender: { male: "男性", female: "女性"},
     signupError: "アカウント作成中にエラーが発生しました: {error}",
     loading: "読み込み中",
     match: {
@@ -1455,7 +1463,8 @@ const i18n = {
       major: "学部学科",
       mbti: "MBTI",
       personality: "性格",
-      purpose: "目的"
+      purpose: "目的",
+      gender: "性別"
     },
     action: {
       accept: "承認",
@@ -1590,6 +1599,7 @@ const i18n = {
       q6: "7. 你的性格是怎样的？（可多选）",
       q7: "8. 希望使用此软件联系其他同学的频率是？",
       q8: "9. 想通过配对达成什么目的？（可多选）",
+      q9: "10. 请告诉我们你的性别",
       finalTitle: "创建账号 - 输入邮箱和密码",
       emailLabel: "学校官方邮箱",
       emailPlaceholder: "请输入邮箱地址",
@@ -1597,6 +1607,7 @@ const i18n = {
       passwordPlaceholder: "请输入密码",
       createAccount: "创建账号"
     },
+    gender: { male: "男", female: "女"},
     signupError: "创建账号时发生错误: {error}",
     loading: "加载中",
     match: {
@@ -1935,7 +1946,8 @@ const i18n = {
      major: "专业",
      mbti: "MBTI",
      personality: "性格",
-     purpose: "兴趣"
+     purpose: "兴趣",
+     gender: "性别"
    },
    action: {
      accept: "接受",
@@ -2353,16 +2365,11 @@ const signupQuestions = [
   { id: 6, textKey: "signup.q6", type: "multi", options: ["personality.extrovert", "personality.introvert", "personality.precise", "personality.honest"] },
   { id: 7, textKey: "signup.q7", type: "single", options: ["frequency.never", "frequency.sometimes", "frequency.often", "frequency.always"] },
   { id: 8, textKey: "signup.q8", type: "multi", options: ["purpose.language", "purpose.friend", "purpose.info"] },
+  { id: 9, textKey: "signup.q9", type: "single", options: ["gender.male", "gender.female"] }
 ];
 
 // 매칭 질문
 export const matchQuestions = [
-  {
-    id: "ageRange",
-    textKey: "match.ageRange",
-    type: "range",
-    options: ["20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80-89", "90-100"]
-  },
   {
     id: "school",
     textKey: "match.school",
@@ -2805,6 +2812,7 @@ async function saveAccount() {
       personality: state.signupAnswers[6],
       contactFrequency: state.signupAnswers[7],
       purpose: state.signupAnswers[8],
+      gender: state.signupAnswers[9],
       password: password,
       bio: "" // 자기소개 필드 기본값 추가
     });
