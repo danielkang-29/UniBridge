@@ -588,12 +588,9 @@
 
     #homeContent {
       overflow-y: auto;
-      scrollbar-width: none !important;       /* Firefox */
-      -ms-overflow-style: none !important;    /* IE/Edge */
-    }
-
-    #homeContent::-webkit-scrollbar {
-      display: none !important;               /* Chrome, Safari */
+      -webkit-overflow-scrolling: touch;
+      height: calc(var(--vh, 1vh) * 100 - 56px - 72px); /* 상단바/하단바 빼고 */
+      padding-bottom: 16px;
     }
 
     #fileLabel {
@@ -711,6 +708,82 @@
       z-index: 5;
       pointer-events: none;
     }
+
+    .card-carousel {
+      position: relative;
+      max-width: 420px;       /* 카드 최대 폭 */
+      margin: 16px auto;
+      border-radius: 8px;
+      overflow: hidden;       /* 모서리 라운드 유지 */
+    }
+
+    .cc-viewport { overflow: hidden; }
+    
+    .cc-track {
+      display: flex;
+      flex-direction: column;  /* ✅ 세로로 쌓기 */
+      gap: 16px;               /* 사진들 사이 여백 */
+    }
+
+    .cc-slide {
+      width: 100%;
+      flex: none;              /* 크기 줄어들지 않게 */
+    }
+
+    /* 16:9 비율 카드 */
+    .cc-slide img {
+      width: 100%;    /* 가로를 부모 크기에 맞춤 */
+      height: auto;   /* 세로는 자동 계산 → 원본 비율 유지 */
+      display: block; /* inline 이미지 여백 제거 */
+    }
+
+    /* 이미지 하단 캡션 (선택) */
+    .cc-caption {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      backdrop-filter: blur(2px);
+    }
+
+    .cc-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .cc-prev { left: 10px; }
+    .cc-next { right: 10px; }
+
+    .cc-btn:hover { background: rgba(0,0,0,0.6); }
+
+    .cc-dots {
+      position: absolute;
+      left: 0; right: 0; bottom: 8px;
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .cc-dots button {
+      width: 6px; height: 6px; border-radius: 50%;
+      border: 0; background: rgba(255,255,255,0.5);
+      pointer-events: auto; cursor: pointer;
+    }
+    .cc-dots button.active { background: #fff; }
 
     @media (max-width: 400px) {
       #app {
