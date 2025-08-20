@@ -990,7 +990,7 @@ function renderHome(defaultTab = "home") {
     const bottomBar = document.getElementById("bottomBar");
     if (bottomBar) {
       bottomBar.innerHTML = `
-        <div style="margin-bottom: 12px;">
+        <div style="margin-bottom: 20px;">
           <button id="toggleIntroBtn" data-email="${email}" class="toggleIntroBtn">
             ${t("common.lookIntroduction")}
           </button>
