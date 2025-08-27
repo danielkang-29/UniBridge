@@ -2308,7 +2308,7 @@ function renderMatchCandidate() {
     <h2>${t("match.candidateTitle")}</h2>
 
     <!-- 프로필 & 소개를 감싸는 영역 -->
-    <div id="profileArea" style="min-height: 300px;padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);">
+    <div id="profileArea" style="min-height: 300px;padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);">
       <div class="basic-info">
         <p><strong>${t("profile.email")}: </strong> ${candidate.id}</p>
         <p><strong>${t("profile.age")}: </strong> ${candidate.age}</p>
@@ -2601,3 +2601,4 @@ document.addEventListener("DOMContentLoaded", () => {
     carousel.style.transform = `translateX(${-index * 100}%)`;
   });
 });
+
